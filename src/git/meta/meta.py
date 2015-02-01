@@ -114,10 +114,10 @@ class TagStr(str):
                     closing = self._shell[tag]['end']
 
                 for tag2, code2 in code.items():
-                    regex = re.compile("(<{0}={1}>)(.*?)(</{0}>)".format(tag, tag2))
+                    regex = re.compile(r"(<{0}={1}>)(.*?)(</{0}>)".format(tag, tag2), re.DOTALL)
                     text = regex.sub(r"{0}\2{1}".format(code2, closing), text)
             else:
-                regex = re.compile(r"(<{0}>)(.*?)(</{0}>)".format(tag))
+                regex = re.compile(r"(<{0}>)(.*?)(</{0}>)".format(tag), re.DOTALL)
                 if type(code) is list:
                     text = regex.sub(r"{0}\2{1}".format(*code), text)
                 else:
@@ -355,26 +355,38 @@ class Meta(object):
                     # which are perfectly managed by the base repository.
                     dirs.clear()
 
-        # Writing all the repositories discvered to the database
-        # file for future utilisation
-        with open(self.config['repolist'], 'w+') as repofile:
-            repofile.write("\n".join(repolist))
+        self._write_repolist(repolist)
 
         # Force the content of the repolist to the newly made
         self.repolist = repolist
+
+    def _write_repolist(self, repolist):
+        """Writing all the repositories discovered to the database
+        file for future utilisation
+
+        Args:
+            repolist (list of str)
+        """
+        with open(self.config['repolist'], 'w+') as repofile:
+            repofile.write("\n".join(repolist))
 
     def scan(self, **kwargs):
         """ Scan all the repositories in the database for their statuses
         """
 
         for path in self.repolist:
-            repo = Repo(path)
-            if 'filter_status' not in kwargs.keys() or kwargs['filter_status'] is None:
-                print(repo.statusline())
-            elif kwargs['filter_status'] == "OK" and not repo.status():
-                print(repo.statusline())
-            elif kwargs['filter_status'] == "KO" and repo.status():
-                print(repo.statusline())
+            try:
+                repo = Repo(path)
+            except KeyError:
+                errstr = TagStr(" <color=red>%s\n    is not a valid repository</color>" % path)
+                print(errstr.shell())
+            else:
+                if 'filter_status' not in kwargs.keys() or kwargs['filter_status'] is None:
+                    print(repo.statusline())
+                elif kwargs['filter_status'] == "OK" and not repo.status():
+                    print(repo.statusline())
+                elif kwargs['filter_status'] == "KO" and repo.status():
+                    print(repo.statusline())
 
 
 def main():  # pragma: no cover
