@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages, Command
 
 install_requires = ['pygit2==0.21.4']
-version = 0.1
+version = "0.1.0"
 
 class PyTest(Command):
     user_options = []
