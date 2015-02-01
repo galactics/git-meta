@@ -278,7 +278,11 @@ class Meta(object):
 
         self._definePaths()
         # Load the database file
-        self.readList()
+
+        try:
+            self.readList()
+        except FileNotFoundError:
+            self.discover()
 
     def _definePaths(self):
 
