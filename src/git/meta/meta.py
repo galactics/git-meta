@@ -380,6 +380,10 @@ class Meta(object):
             except KeyError:
                 errstr = TagStr(" <color=red>%s\n    is not a valid repository</color>" % path)
                 print(errstr.shell())
+                if kwargs['clean']:
+                    repolist = self.repolist[:]
+                    repolist.remove(path)
+                    self._write_repolist(repolist)
             else:
                 if 'filter_status' not in kwargs.keys() or kwargs['filter_status'] is None:
                     print(repo.statusline())
@@ -409,6 +413,10 @@ def main():  # pragma: no cover
     parser.add_argument('--filter', dest='filter_status', type=str,
                         action='store', choices=('OK', 'KO', '?'), default=None,
                         help="Filter git repo by status. '?' stands for unknown")
+
+    parser.add_argument('--clean', action='store_false',
+                        help="If a non-valid repository is encountered, it is removed from \
+                                the user\'s list")
 
     args = vars(parser.parse_args())
 
