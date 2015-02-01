@@ -13,6 +13,10 @@ in C.
 Installation
 ------------
 
+    # pip install git-meta
+
+Alternatively, if you want to install `git-meta` from the sources:
+
     # python setup.py install
 
 You can also install it in a [virtialenv](https://github.com/pypa/virtualenv) in
