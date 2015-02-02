@@ -26,7 +26,7 @@ Documentation
 -------------
 
 The documentation uses [Sphinx](http://sphinx-doc.org/). To generate statics HTML
-files, go to the docs file and type
+files, go to the docs folder and type
 
     $ make html
 
