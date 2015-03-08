@@ -2,8 +2,8 @@
 
 from setuptools import setup, find_packages, Command
 
-install_requires = ['pygit2==0.21.4']
-version = "0.1.0"
+install_requires = ['pygit2==0.22.0']
+version = "0.1.1"
 
 class PyTest(Command):
     user_options = []
