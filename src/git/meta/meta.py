@@ -237,6 +237,8 @@ class Repo(pygit2.Repository):
             'more': [],
         }
 
+        max_path_len = 50
+
         template = " {path} {filler}{more} {status}"
 
         if self.is_bare:
@@ -244,7 +246,11 @@ class Repo(pygit2.Repository):
             form['more'] = ""
             form['status'] = "[<color=yellow>BARE</color>]"
         else:
-            form['path'] = self.workdir
+
+            if len(self.workdir) <= max_path_len:
+                form['path'] = self.workdir
+            else:
+                form['path'] = "..." + self.workdir[-max_path_len:]
 
             if not self.status():
                 form['status'] = "[ <color=green>OK</color> ]"
@@ -278,7 +284,6 @@ class Meta(object):
 
         self._definePaths()
         # Load the database file
-
         try:
             self.readList()
         except FileNotFoundError:
