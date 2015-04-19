@@ -26,7 +26,7 @@ Documentation
 -------------
 
 The documentation uses [Sphinx](http://sphinx-doc.org/). To generate statics HTML
-files, go to the docs folder and type
+files, go to the `docs` folder and type
 
     $ make html
 
@@ -47,3 +47,8 @@ Old version of git-meta
 -----------------------
 
 The old version of git meta can be found [here](https://github.com/galactics/git-meta-old).
+
+Todo
+----
+
+* At the moment, unit-tests aren't independents from one another.
