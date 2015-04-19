@@ -10,17 +10,17 @@ import re
 
 
 class TagStr(str):
-    """ Tagged strings
+    """Tagged strings
 
-        Allow you to decorate a bit your terminal output in a html fashion.
-        Of course everything is not ported.
+    Allow you to decorate a bit your terminal output in a html fashion.
+    Of course everything is not ported.
 
-        Example:
+    Example:
 
-        .. code-block:: python
+    .. code-block:: python
 
-            TagStr("Hello, I'm a <u>decorated</u> string")
-            TagStr("What a coincidence, <color=green>me too</color>")
+        TagStr("Hello, I'm a <u>decorated</u> string")
+        TagStr("What a coincidence, <color=green>me too</color>")
     """
 
     _shell = {
@@ -53,19 +53,19 @@ class TagStr(str):
     }
 
     def __add__(self, elem):
-        """ Concatenation handling
+        """Concatenation handling
 
-            >>> a = TagStr("Hello ")
-            >>> b = "World"
-            >>> type(a+b) is TagStr
-            True
-            >>> c = TagStr("World")
-            >>> type(a+c) is TagStr
-            True
-            >>> a + 1
-            Traceback (most recent call last):
-                ...
-            TypeError: TagStr concatenate only with str or TagStr
+        >>> a = TagStr("Hello ")
+        >>> b = "World"
+        >>> type(a+b) is TagStr
+        True
+        >>> c = TagStr("World")
+        >>> type(a+c) is TagStr
+        True
+        >>> a + 1
+        Traceback (most recent call last):
+            ...
+        TypeError: TagStr concatenate only with str or TagStr
         """
         if type(elem) not in (str, self.__class__):
             raise TypeError("TagStr concatenate only with str or TagStr")
@@ -73,19 +73,19 @@ class TagStr(str):
         return self.__class__(str(self) + str(elem))
 
     def __radd__(self, elem):
-        """ Concatenation handling
+        """Concatenation handling
 
-            >>> a = "World"
-            >>> b = TagStr("Hello ")
-            >>> type(a+b) is TagStr
-            True
-            >>> c = TagStr("World")
-            >>> type(c+b) is TagStr
-            True
-            >>> 1 + b
-            Traceback (most recent call last):
-                ...
-            TypeError: TagStr concatenate only with str or TagStr
+        >>> a = "World"
+        >>> b = TagStr("Hello ")
+        >>> type(a+b) is TagStr
+        True
+        >>> c = TagStr("World")
+        >>> type(c+b) is TagStr
+        True
+        >>> 1 + b
+        Traceback (most recent call last):
+            ...
+        TypeError: TagStr concatenate only with str or TagStr
         """
         if type(elem) not in (str, self.__class__):
             raise TypeError("TagStr concatenate only with str or TagStr")
@@ -94,14 +94,14 @@ class TagStr(str):
 
     def shell(self):
         """
-            >>> test_str = TagStr('Here is a <u>test</u> string')
-            >>> test_str
-            'Here is a <u>test</u> string'
-            >>> test_str.shell()
-            'Here is a \\x1b[4mtest\\x1b[24m string'
+        >>> test_str = TagStr('Here is a <u>test</u> string')
+        >>> test_str
+        'Here is a <u>test</u> string'
+        >>> test_str.shell()
+        'Here is a \\x1b[4mtest\\x1b[24m string'
 
-            Returns:
-                str: Convert the tags to a decorated shell output.
+        Returns:
+            str: Convert the tags to a decorated shell output.
         """
         text = str(self)
         for tag, code in self._shell.items():
@@ -126,36 +126,36 @@ class TagStr(str):
 
     def empty(self):
         """
-            >>> test_str = TagStr('Here is a <u>test</u> string')
-            >>> test_str
-            'Here is a <u>test</u> string'
-            >>> test_str.empty()
-            'Here is a test string'
+        >>> test_str = TagStr('Here is a <u>test</u> string')
+        >>> test_str
+        'Here is a <u>test</u> string'
+        >>> test_str.empty()
+        'Here is a test string'
 
-            Returns:
-                str: Refined string without tags
+        Returns:
+            str: Refined string without tags
         """
         regex = re.compile(r'(<.*?>)')
         return regex.sub('', self)
 
 
 class Repo(pygit2.Repository):
-    """ Class representing a repository.
+    """Class representing a repository.
 
-        Allows to perform common git commands
+    Allows to perform common git commands
     """
 
     def status(self):
-        """ Gives the status of the current branch.
+        """Gives the status of the current branch.
 
-            Contrarely to pygit2.Repository, self.status() does not show the
-            ignored files.
+        Contrarily to pygit2.Repository, self.status() does not show the
+        ignored files.
 
-            Returns:
-                dict : Each key stand for a file with a non-clean status, and
-                       the value is the code of this non-clean status.
-                       See pygit2.GIT_STATUS_* for details.
-                       If empty, all files are clean.
+        Returns:
+            dict : Each key stand for a file with a non-clean status, and the
+                value is the code of this non-clean status.
+                See pygit2.GIT_STATUS_* for details.  If empty, all files are
+                clean.
         """
 
         status = super(Repo, self).status()
@@ -170,12 +170,12 @@ class Repo(pygit2.Repository):
         return status
 
     def remote_diff(self):
-        """ For each branch with a remote couterpart, give the number of commit
-            difference
+        """For each branch with a remote counterpart, give the number of
+        commit difference
 
-            Returns:
-                dict: keys -> branch name
-                      values -> number
+        Returns:
+            dict: keys -> branch name
+                values -> number
         """
         diffs = {}
 
@@ -215,10 +215,10 @@ class Repo(pygit2.Repository):
         return diffs
 
     def stash(self):
-        """ List stashes
+        """List stashes
 
-            Returns:
-                bool: True if there is stashed modifications
+        Returns:
+            bool: True if there is stashed modifications
         """
         for ref in self.listall_references():
             if ref.startswith('refs/stash'):
@@ -226,10 +226,10 @@ class Repo(pygit2.Repository):
         return False
 
     def statusline(self):
-        """ Create the status line for the selected repository.
+        """Create the status line for the selected repository.
 
-            Returns:
-                string: Status line as used by git-meta
+        Returns:
+            string: Status line as used by git-meta
         """
 
         form = {
@@ -313,15 +313,15 @@ class Meta(object):
                 self.config[key] = global_config[fullkey]
 
     def readList(self):
-        """ Read the database file to extract the paths of previously scanned
-            repositories
+        """Read the database file to extract the paths of previously scanned
+        repositories
         """
 
         with open(self.config['repolist']) as repolist_f:
             self.repolist = repolist_f.read().splitlines()
 
     def discover(self):
-        """ Scan the subfolders to discover repositories
+        """Scan the subfolders to discover repositories
         """
 
         try:
@@ -376,7 +376,7 @@ class Meta(object):
             repofile.write("\n".join(repolist))
 
     def scan(self, **kwargs):
-        """ Scan all the repositories in the database for their statuses
+        """Scan all the repositories in the database for their statuses
         """
 
         for path in self.repolist:
@@ -399,7 +399,7 @@ class Meta(object):
 
 
 def main():  # pragma: no cover
-    """ Main ``git-meta`` script function """
+    """Main ``git-meta`` script function """
 
     import argparse
 
