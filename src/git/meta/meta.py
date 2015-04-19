@@ -282,14 +282,14 @@ class Meta(object):
     def __init__(self):
         self.repolist = []
 
-        self._definePaths()
+        self._define_paths()
         # Load the database file
         try:
-            self.readList()
+            self.read_list()
         except FileNotFoundError:
             self.discover()
 
-    def _definePaths(self):
+    def _define_paths(self):
 
         # Default locations
         self.config = {
@@ -312,7 +312,7 @@ class Meta(object):
             if key in self.config.keys():
                 self.config[key] = global_config[fullkey]
 
-    def readList(self):
+    def read_list(self):
         """Read the database file to extract the paths of previously scanned
         repositories
         """
