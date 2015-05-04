@@ -404,8 +404,11 @@ def main():  # pragma: no cover
     """Main ``git-meta`` script function """
 
     import argparse
+    import pkg_resources
 
     meta = Meta()
+
+    version = pkg_resources.require("git-meta")[0].version
 
     description = """
         Check all git repository statuses.
@@ -425,6 +428,9 @@ def main():  # pragma: no cover
     parser.add_argument('--clean', action='store_false',
                         help="If a non-valid repository is encountered, it is removed from \
                                 the user\'s list")
+
+    parser.add_argument('--version', action='version',
+                        version='git-meta v{0}'.format(version))
 
     args = vars(parser.parse_args())
 

@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 
-from setuptools import setup, find_packages, Command
+from setuptools import setup, find_packages
+
+__version__ = "0.1.2"
 
 install_requires = ['pygit2==0.22.0']
-version = "0.1.2"
-
-
 
 setup(
     name='git-meta',
-    version=version,
+    version=__version__,
     description="Git reposiroties manager",
     platforms=["any"],
     keywords='git',
