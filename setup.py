@@ -5,32 +5,7 @@ from setuptools import setup, find_packages, Command
 install_requires = ['pygit2==0.22.0']
 version = "0.1.2"
 
-class PyTest(Command):
-    user_options = []
-    def initialize_options(self):
-        pass
 
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        import sys,subprocess
-        errno = subprocess.call(['py.test'])
-        raise SystemExit(errno)
-
-class Doc(Command):
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        import os, subprocess
-        errno = subprocess.call(['make', '-C', 'docs/', 'html'])
-        raise SystemExit(errno)
 
 setup(
     name='git-meta',
@@ -52,10 +27,6 @@ setup(
         "console_scripts": [
             "git-meta = git.meta:main"
         ]
-    },
-    cmdclass = {
-        'test': PyTest,
-        'docs': Doc,
     },
     extras_require={
         'test': [
