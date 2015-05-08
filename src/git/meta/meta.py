@@ -225,7 +225,7 @@ class Repo(pygit2.Repository):
                 return True
         return False
 
-    def statusline(self):
+    def statusline(self, line_width=80):
         """Create the status line for the selected repository.
 
         Returns:
@@ -237,7 +237,7 @@ class Repo(pygit2.Repository):
             'more': [],
         }
 
-        max_path_len = 50
+        max_path_len = line_width - 30
 
         template = " {path} {filler}{more} {status}"
 
@@ -270,7 +270,7 @@ class Repo(pygit2.Repository):
                 form['more'] = ""
 
         line = TagStr(template.format(**form))
-        form['filler'] = " " * (80 - len(line.empty()))
+        form['filler'] = " " * (line_width - len(line.empty()))
 
         line = TagStr(template.format(**form))
         return line.shell()
@@ -379,6 +379,12 @@ class Meta(object):
         """Scan all the repositories in the database for their statuses
         """
 
+        try:
+            rows, column = os.popen('stty size', 'r').read().split()
+            line_width = int(column)
+        except:
+            line_width = 80
+
         for path in self.repolist:
             try:
                 repo = Repo(path)
@@ -397,7 +403,7 @@ class Meta(object):
                         (kwargs['filter_status'] == "KO" and repo.status()) or
                         (kwargs['filter_status'] == "rdiff" and repo.remote_diff())
                    ):
-                    print(repo.statusline())
+                    print(repo.statusline(line_width))
 
 
 def main():  # pragma: no cover
