@@ -390,13 +390,13 @@ class Meta(object):
                     repolist.remove(path)
                     self._write_repolist(repolist)
             else:
-                if 'filter_status' not in kwargs.keys() or kwargs['filter_status'] is None:
-                    print(repo.statusline())
-                elif kwargs['filter_status'] == "OK" and not repo.status():
-                    print(repo.statusline())
-                elif kwargs['filter_status'] == "KO" and repo.status():
-                    print(repo.statusline())
-                elif kwargs['filter_status'] == "rdiff" and repo.remote_diff():
+                if (
+                        'filter_status' not in kwargs.keys() or
+                        kwargs['filter_status'] is None or
+                        (kwargs['filter_status'] == "OK" and not repo.status()) or
+                        (kwargs['filter_status'] == "KO" and repo.status()) or
+                        (kwargs['filter_status'] == "rdiff" and repo.remote_diff())
+                   ):
                     print(repo.statusline())
 
 
