@@ -7,6 +7,7 @@
 import os
 import pygit2
 import re
+import glob
 
 
 class TagStr(str):
@@ -342,6 +343,13 @@ class Meta(object):
                 # we also want to ignore every subfolder
                 dirs.clear()
                 continue
+
+            # Check for globing pattern match to ignore
+            for ignore_path in ignorelist:
+                if (glob.has_magic(ignore_path) and
+                        glob.fnmatch.fnmatch(root, ignore_path)):
+                    dirs.clear()
+                    continue
 
             if '.git' in dirs or 'config' in files:
                 # It looks like a repository, but is it?
