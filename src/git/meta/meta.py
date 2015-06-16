@@ -248,7 +248,7 @@ class Repo(pygit2.Repository):
             form['status'] = "[<color=yellow>BARE</color>]"
         else:
 
-            if len(self.workdir) <= max_path_len:
+            if len(self.workdir) <= max_path_len + 3:
                 form['path'] = self.workdir
             else:
                 form['path'] = "..." + self.workdir[-max_path_len:]
