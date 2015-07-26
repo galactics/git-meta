@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import shutil
 import pytest
 import pygit2
 
@@ -10,248 +9,286 @@ import subprocess
 
 from git.meta import Repo, Meta
 
-working_dir = os.path.dirname(os.path.realpath(__file__))
-
-repo_path = os.path.join(working_dir, "tmp-repository")
-filepath = os.path.join(repo_path, 'dummy_file.txt')
-ignored_path = os.path.join(repo_path, 'ignored.txt')
-gitignore_path = os.path.join(repo_path, '.gitignore')
-
-pygit2.init_repository(repo_path)
-repo = Repo(repo_path)
 author = pygit2.Signature("test_author", "author@example.com")
 commiter = pygit2.Signature("test_commiter", "commiter@example.com")
 
-cloned_repo = os.path.join(working_dir, 'cloned_repository')
-dumb_repo = os.path.join(working_dir, 'dumb')
+filename = "dummy_file.txt"
+ignored_filename = "ignored_file.txt"
 
-_clone = None
-clone_filepath = os.path.join(cloned_repo, os.path.basename("pouet.txt"))
+
+@pytest.yield_fixture
+def empty_repo(tmpdir):
+
+    repo_path = str(tmpdir.mkdir("repo.git"))
+
+    pygit2.init_repository(repo_path)
+    yield Repo(repo_path)
+
 
 @pytest.fixture
-def empty_repo():
-    return repo
+def clean_repo(empty_repo):
 
-
-@pytest.fixture
-def clean_repo():
+    filepath = os.path.join(empty_repo.workdir, filename)
 
     with open(filepath, 'w+') as new:
         new.write('hello, here is a test')
 
-    repo.index.add(os.path.basename(filepath))
-    repo.index.write()
-    repo.create_commit('refs/heads/master',
-                       author,
-                       commiter,
-                       "Initial commit",
-                       repo.index.write_tree(),
-                       [])
+    empty_repo.index.add(os.path.basename(filepath))
+    empty_repo.index.write()
+    empty_repo.create_commit(
+        'refs/heads/master',
+        author,
+        commiter,
+        "Initial commit",
+        empty_repo.index.write_tree(),
+        [])
 
-    return repo
+    return empty_repo
+
 
 @pytest.fixture
-def dirty_repo():
+def dirty_repo(clean_repo):
+
+    filepath = os.path.join(clean_repo.workdir, filename)
+
     with open(filepath, 'w') as file_handler:
         file_handler.write("\nNew line")
 
-
-@pytest.fixture
-def dirty_index():
-    repo.index.add(os.path.basename(filepath))
-    repo.index.write()
+    return clean_repo
 
 
 @pytest.fixture
-def clean_repo2():
-    repo.create_commit('refs/heads/master',
-                       author,
-                       commiter,
-                       "Second commit",
-                       repo.index.write_tree(),
-                       [repo.head.peel().id])
+def dirty_index(dirty_repo):
+    filepath = os.path.join(dirty_repo.workdir, filename)
+
+    dirty_repo.index.add(os.path.basename(filepath))
+    dirty_repo.index.write()
+
+    return dirty_repo
 
 
 @pytest.fixture
-def ignored_file():
+def clean_repo2(dirty_index):
+    dirty_index.create_commit(
+        'refs/heads/master',
+        author,
+        commiter,
+        "Second commit",
+        dirty_index.index.write_tree(),
+        [dirty_index.head.peel().id]
+    )
+
+    return dirty_index
+
+
+@pytest.fixture
+def ignored_file(clean_repo2):
+
+    gitignore_path = os.path.join(clean_repo2.workdir, ".gitignore")
+    ignored_path = os.path.join(clean_repo2.workdir, ignored_filename)
 
     with open(gitignore_path, 'w+') as gitignore, open(ignored_path, 'w+') as ignored:
         gitignore.write(os.path.basename(ignored_path) + "\n")
         ignored.write("Whatever, this text won't be seen anyway")
 
-    repo.index.add(os.path.basename(gitignore_path))
-    repo.index.write()
+    clean_repo2.index.add(os.path.basename(gitignore_path))
+    clean_repo2.index.write()
 
-    repo.create_commit('refs/heads/master',
-                       author,
-                       commiter,
-                       "gitignore added",
-                       repo.index.write_tree(),
-                       [repo.head.peel().id])
+    clean_repo2.create_commit(
+        'refs/heads/master',
+        author,
+        commiter,
+        "gitignore added",
+        clean_repo2.index.write_tree(),
+        [clean_repo2.head.peel().id])
 
-
-@pytest.fixture
-def clone():
-    global _clone
-    pygit2.clone_repository(repo_path, cloned_repo)
-    _clone = Repo(cloned_repo)
-
-    with open(filepath, 'w') as file_remote, open(clone_filepath, 'w') as file_clone:
-        file_remote.write("\nThis is in the first repository")
-        file_clone.write("\nThis is in the clone repository")
-
-    repo.index.add_all()
-    repo.index.write()
-    repo.create_commit('refs/heads/master',
-                       author,
-                       commiter,
-                       "New modification",
-                       repo.index.write_tree(),
-                       [repo.head.peel().id])
-
-    with open(filepath, 'a') as file_remote:
-        file_remote.write("\nNew line in the first repository")
-
-    #repo.index.add_all()
-    #repo.index.write()
-    #repo.create_commit('refs/heads/master',
-                       #author,
-                       #commiter,
-                       #"Second modification on the original repo",
-                       #repo.index.write_tree(),
-                       #[repo.head.peel().id])
-
-    _clone.index.add_all()
-    _clone.index.write()
-    _clone.create_commit('refs/heads/master',
-                       author,
-                       commiter,
-                       "New modification on the clone",
-                       _clone.index.write_tree(),
-                       [_clone.head.peel().id])
-
-    with open(clone_filepath, 'a') as file_clone:
-        file_clone.write("\nNew line in the second repository")
-
-    _clone.index.add_all()
-    _clone.index.write()
-    _clone.create_commit('refs/heads/master',
-                       author,
-                       commiter,
-                       "Second modification on the clone",
-                       _clone.index.write_tree(),
-                       [_clone.head.peel().id])
-
-    _clone.remotes[0].fetch()
-
-    return _clone
+    return clean_repo2
 
 
 @pytest.fixture
-def stashed():
+def clone(tmpdir, clean_repo2):
+
+    cloned_repo_path = str(tmpdir.mkdir("clone.git"))
+
+    pygit2.clone_repository(clean_repo2.workdir, cloned_repo_path)
+    clone_repo = Repo(cloned_repo_path)
+
+    filepath = os.path.join(clean_repo2.workdir, filename)
+    clone_filepath = os.path.join(clone_repo.workdir, filename)
+
+    # Modification of same file on both original and cloned repositories
+    with open(filepath, 'a') as file_original, open(clone_filepath, 'a') as file_cloned:
+        file_original.write("\nThis is in the first repository")
+        file_cloned.write("\nThis is in the clone repository")
+
+    # Create commit from modifications on original repository
+    clean_repo2.index.add_all()
+    clean_repo2.index.write()
+    clean_repo2.create_commit(
+        'refs/heads/master',
+        author,
+        commiter,
+        "New modification",
+        clean_repo2.index.write_tree(),
+        [clean_repo2.head.peel().id])
+
+    # New uncommited changes to the original repository
+    with open(filepath, 'a') as file_original:
+        file_original.write("\nNew line in the first repository")
+
+    # Commit of the first
+    clone_repo.index.add_all()
+    clone_repo.index.write()
+    clone_repo.create_commit(
+        'refs/heads/master',
+        author,
+        commiter,
+        "New modification on the clone",
+        clone_repo.index.write_tree(),
+        [clone_repo.head.peel().id])
+
+    # Second modification on the cloned repository
+    with open(clone_filepath, 'a') as file_cloned:
+        file_cloned.write("\nNew line in the second repository")
+
+    clone_repo.index.add_all()
+    clone_repo.index.write()
+    clone_repo.create_commit(
+        'refs/heads/master',
+        author,
+        commiter,
+        "Second modification on the clone",
+        clone_repo.index.write_tree(),
+        [clone_repo.head.peel().id])
+
+    clone_repo.remotes[0].fetch()
+
+    return (clean_repo2, clone_repo)
+
+
+@pytest.fixture
+def stashed(clean_repo2):
+    filepath = os.path.join(clean_repo2.workdir, filename)
+
     with open(filepath, 'w') as content:
         content.write("Modification\n")
 
     # I don't know how to do it the pygit2-way
-    proc = subprocess.Popen(['git', 'stash'], cwd=repo_path)
+    proc = subprocess.Popen(['git', 'stash'], cwd=clean_repo2.workdir)
     # wait until the end of the command
     proc.wait()
 
-
-_meta = Meta()
-_meta.config['scanroot'] = working_dir
+    return clean_repo2
 
 
 @pytest.fixture
-def mk_dumb_repo():
-    os.makedirs(os.path.join(dumb_repo, '.git'))
+def mk_dumb_repo(tmpdir):
+    return str(tmpdir.makedirs("dumbrepos/.git/"))
 
 
 @pytest.fixture
-def pulling():
-    remote_commit = _clone.lookup_branch('master').upstream.peel()
-    _clone.merge(remote_commit.id)
-    _clone.create_commit('refs/heads/master',
-                         author,
-                         commiter,
-                         "Merge commit",
-                         _clone.index.write_tree(),
-                         [_clone.head.target, remote_commit.id])
+def pulling(clone):
+    # We go back two commits, in order to have a clean merge
+    # i.e. we decide that the original repository has a better
+    # modification
+    original, clone = clone
+    clone.reset(clone.head.peel().parents[0].parents[0].oid, pygit2.GIT_RESET_HARD)
 
+    remote_commit = clone.lookup_branch('master').upstream.peel()
+    clone.merge(remote_commit.id)
+    clone.create_commit(
+        'refs/heads/master',
+        author,
+        commiter,
+        "Merge commit",
+        clone.index.write_tree(),
+        [clone.head.target, remote_commit.id])
+
+    return clone
+
+
+@pytest.yield_fixture
+def meta(tmpdir, pulling):
+    meta = Meta()
+    old = meta.config['scanroot']
+    meta.config['scanroot'] = str(tmpdir)
+    yield meta
+    meta.config['scanroot'] = old
+    meta.discover()
 
 
 def test_empty_repo(empty_repo):
-    assert repo.status() == {}
-    assert repo.is_empty == True
+    assert empty_repo.status() == {}
+    assert empty_repo.is_empty is True
 
 
 def test_clean_repo(clean_repo):
-    assert repo.is_empty == False
-    assert repo.status() == {}
-    assert repo.statusline().endswith('[ \x1b[92mOK\x1b[39m ]') == True
+    assert clean_repo.is_empty is False
+    assert clean_repo.status() == {}
+    assert clean_repo.statusline().endswith('[ \x1b[92mOK\x1b[39m ]') is True
 
 
 def test_dirty_repo(dirty_repo):
-    assert repo.status() == {os.path.basename(filepath): pygit2.GIT_STATUS_WT_MODIFIED}
-    assert repo.statusline().endswith('[ \x1b[91mKO\x1b[39m ]') == True
+    assert dirty_repo.status() == {filename: pygit2.GIT_STATUS_WT_MODIFIED}
+    assert dirty_repo.statusline().endswith('[ \x1b[91mKO\x1b[39m ]') is True
 
 
 def test_dirty_index(dirty_index):
-    assert repo.status() == {os.path.basename(filepath): pygit2.GIT_STATUS_INDEX_MODIFIED}
-    assert repo.statusline().endswith('[ \x1b[91mKO\x1b[39m ]') == True
+    assert dirty_index.status() == {filename: pygit2.GIT_STATUS_INDEX_MODIFIED}
+    assert dirty_index.statusline().endswith('[ \x1b[91mKO\x1b[39m ]') is True
 
 
 def test_clean_repo2(clean_repo2):
-    assert repo.status() == {}
-    assert repo.statusline().endswith('[ \x1b[92mOK\x1b[39m ]') == True
+    assert clean_repo2.status() == {}
+    assert clean_repo2.statusline().endswith('[ \x1b[92mOK\x1b[39m ]') is True
 
 
 def test_ignore(ignored_file):
-    assert repo.status() == {}
-    assert super(Repo, repo).status() == {os.path.basename(ignored_path): pygit2.GIT_STATUS_IGNORED}
+    assert ignored_file.status() == {}
+    assert super(Repo, ignored_file).status() == {ignored_filename: pygit2.GIT_STATUS_IGNORED}
 
 
 def test_cloned(clone):
-    assert _clone.remote_diff() == {'master': '2-1'}
-    assert _clone.statusline().endswith('(master:2-1) [ \x1b[92mOK\x1b[39m ]') == True
+    original, clone = clone
+    assert original.remote_diff() == {}
+    assert clone.remote_diff() == {'master': '2-1'}
+    assert clone.statusline().endswith('(master:2-1) [ \x1b[92mOK\x1b[39m ]') is True
 
 
 def test_stashed(stashed):
-    assert repo.stash() == True
-    assert repo.statusline().endswith('(\x1b[93mstash\x1b[39m) [ \x1b[92mOK\x1b[39m ]') == True
+    assert stashed.stash() is True
+    assert stashed.statusline().endswith('(\x1b[93mstash\x1b[39m) [ \x1b[92mOK\x1b[39m ]') is True
 
 
-def test_meta_discovery(mk_dumb_repo, capsys):
-    _meta.discover()
+def test_meta_discovery(meta, capsys):
+    meta.discover()
     out, err = capsys.readouterr()
     assert out.startswith('Discovery of repositories')
     assert out.endswith('sub-directories\n')
     assert err == ""
 
 
-def test_meta_scan(pulling, dirty_repo, capsys):
+def test_meta_scan(meta, dirty_repo, capsys):
 
-    _meta.scan()
+    meta.discover()
+    # Purge of capsys, as discover is not the tested method here
+    out, err = capsys.readouterr()
+
+    meta.scan()
     out, err = capsys.readouterr()
     lines = out.splitlines()
     assert lines[0].endswith('(master:1) [ \x1b[92mOK\x1b[39m ]')
-    assert lines[1].endswith('(\x1b[93mstash\x1b[39m) [ \x1b[91mKO\x1b[39m ]')
+    assert lines[1].endswith(' \x1b[91mKO\x1b[39m ]')
     assert err == ""
 
-    kwargs = {'filter_status': "OK"}
-    _meta.scan(**kwargs)
+    meta.scan(filter_status="OK")
     out, err = capsys.readouterr()
     assert out.endswith('(master:1) [ \x1b[92mOK\x1b[39m ]\n')
 
-    kwargs = {'filter_status': "KO"}
-    _meta.scan(**kwargs)
+    meta.scan(filter_status="KO")
     out, err = capsys.readouterr()
-    assert out.endswith('(\x1b[93mstash\x1b[39m) [ \x1b[91mKO\x1b[39m ]\n')
+    assert out.endswith('[ \x1b[91mKO\x1b[39m ]\n')
 
-
-def test_clean_env():
-    shutil.rmtree(repo_path)
-    shutil.rmtree(cloned_repo)
-    shutil.rmtree(dumb_repo)
-    meta = Meta()
-    meta.discover()
+    meta.scan(filter_status="rdiff")
+    out, err = capsys.readouterr()
+    assert out.endswith('(master:1) [ \x1b[92mOK\x1b[39m ]\n')

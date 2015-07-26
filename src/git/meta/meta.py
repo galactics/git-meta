@@ -287,7 +287,7 @@ class Meta(object):
         # Load the database file
         try:
             self.read_list()
-        except FileNotFoundError:
+        except (IOError, FileNotFoundError):
             self.discover()
 
     def _define_paths(self):
@@ -300,18 +300,21 @@ class Meta(object):
         }
 
         # Parsing of the global config file
-        global_config = pygit2.Config.get_global_config()
+        try:
+            global_config = pygit2.Config.get_global_config()
+        except (IOError, FileNotFoundError):
+            pass
+        else:
+            for fullkey in global_config.__iter__():
 
-        for fullkey in global_config.__iter__():
+                # If the config item does not start with meta it's ignored
+                if not fullkey.startswith('meta'):
+                    continue
 
-            # If the config item does not start with meta it's ignored
-            if not fullkey.startswith('meta'):
-                continue
+                key = fullkey.partition('.')[2]
 
-            key = fullkey.partition('.')[2]
-
-            if key in self.config.keys():
-                self.config[key] = global_config[fullkey]
+                if key in self.config.keys():
+                    self.config[key] = global_config[fullkey]
 
     def read_list(self):
         """Read the database file to extract the paths of previously scanned
@@ -328,27 +331,26 @@ class Meta(object):
         try:
             with open(self.config['ignorelist']) as ignore_file:
                 ignorelist = ignore_file.read().splitlines()
-        except FileNotFoundError:
+        except (IOError, FileNotFoundError):
             ignorelist = []
 
         repolist = []
 
         print("Discovery of repositories in {0} sub-directories".format(
-            self.config['scanroot']
-            )
+            self.config['scanroot'])
         )
 
         for root, dirs, files in os.walk(self.config['scanroot']):
             if root in ignorelist:
                 # we also want to ignore every subfolder
-                dirs.clear()
+                del dirs[:]
                 continue
 
             # Check for globing pattern match to ignore
             for ignore_path in ignorelist:
                 if (glob.has_magic(ignore_path) and
                         glob.fnmatch.fnmatch(root, ignore_path)):
-                    dirs.clear()
+                    del dirs[:]
                     continue
 
             if '.git' in dirs or 'config' in files:
@@ -366,12 +368,12 @@ class Meta(object):
                     # to digg deeper.
                     # Thus, we avoid the struggle of handling submodules
                     # which are perfectly managed by the base repository.
-                    dirs.clear()
+                    del dirs[:]
 
         self._write_repolist(repolist)
 
         # Force the content of the repolist to the newly made
-        self.repolist = repolist
+        self.repolist = sorted(set(repolist))
 
     def _write_repolist(self, repolist):
         """Writing all the repositories discovered to the database
@@ -409,8 +411,7 @@ class Meta(object):
                         kwargs['filter_status'] is None or
                         (kwargs['filter_status'] == "OK" and not repo.status()) or
                         (kwargs['filter_status'] == "KO" and repo.status()) or
-                        (kwargs['filter_status'] == "rdiff" and repo.remote_diff())
-                   ):
+                        (kwargs['filter_status'] == "rdiff" and repo.remote_diff())):
                     print(repo.statusline(line_width))
 
 
