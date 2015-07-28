@@ -21,12 +21,11 @@ git-meta's documentation
 Introduction
 ------------
 
-What is ``git-meta`` ?
+git-meta allows you to get a clear picture of all your local repository states.
 
-git meta allows you to get a clear picture of all your local repository states.
+.. image:: /_static/terminal.png
 
-
-
+It is based on the `pygit2 <https://github.com/libgit2/pygit2>`_ library
 
 Tests
 -----

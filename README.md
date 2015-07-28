@@ -6,7 +6,7 @@ all you git repositories.
 
 ![Terminal output](docs/source/_static/terminal.png)
 
-It uses [pygit2](https://github.com/libgit2/pygit2), which is Python binding of
+It uses [pygit2](https://github.com/libgit2/pygit2), which is Python bindings of
 [libgit2](https://github.com/libgit2/libgit2), a standalone git library writen
 in C.
 
@@ -19,7 +19,7 @@ Alternatively, if you want to install `git-meta` from the sources:
 
     # python setup.py install
 
-You can also install it in a [virtialenv](https://github.com/pypa/virtualenv) in
+You can also install it in a [virtualenv](https://github.com/pypa/virtualenv) in
 order to test and not mess your system configuration.
 
 Documentation
@@ -47,8 +47,3 @@ Old version of git-meta
 -----------------------
 
 The old version of git meta can be found [here](https://github.com/galactics/git-meta-old).
-
-Todo
-----
-
-* At the moment, unit-tests aren't independents from one another.
