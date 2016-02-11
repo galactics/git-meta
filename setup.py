@@ -9,7 +9,7 @@ install_requires = ['pygit2>=0.23.3']
 setup(
     name='git-meta',
     version=__version__,
-    description="Git reposiroties manager",
+    description="Git repository manager",
     platforms=["any"],
     keywords='git',
     author='Jules David',
