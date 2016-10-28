@@ -5,9 +5,9 @@
 """
 
 import os
-import pygit2
 import re
 import glob
+import pygit2
 
 
 class TagStr(str):
@@ -68,7 +68,7 @@ class TagStr(str):
             ...
         TypeError: TagStr concatenate only with str or TagStr
         """
-        if type(elem) not in (str, self.__class__):
+        if not isinstance(elem, (str, self.__class__)):
             raise TypeError("TagStr concatenate only with str or TagStr")
 
         return self.__class__(str(self) + str(elem))
@@ -88,7 +88,7 @@ class TagStr(str):
             ...
         TypeError: TagStr concatenate only with str or TagStr
         """
-        if type(elem) not in (str, self.__class__):
+        if not isinstance(elem, (str, self.__class__)):
             raise TypeError("TagStr concatenate only with str or TagStr")
 
         return self.__class__(str(elem) + str(self))
@@ -106,7 +106,7 @@ class TagStr(str):
         """
         text = str(self)
         for tag, code in self._shell.items():
-            if type(code) is dict:
+            if isinstance(code, dict):
 
                 closing = self._shell['end']
 
@@ -119,7 +119,7 @@ class TagStr(str):
                     text = regex.sub(r"{0}\2{1}".format(code2, closing), text)
             else:
                 regex = re.compile(r"(<{0}>)(.*?)(</{0}>)".format(tag), re.DOTALL)
-                if type(code) is list:
+                if isinstance(code, list):
                     text = regex.sub(r"{0}\2{1}".format(*code), text)
                 else:
                     text = regex.sub(r"{0}\2{1}".format(code, self._shell['end']), text)
@@ -337,8 +337,8 @@ class Meta(object):
         repolist = []
 
         print("Discovery of repositories in {0} sub-directories".format(
-            self.config['scanroot'])
-        )
+            self.config['scanroot']
+        ))
 
         for root, dirs, files in os.walk(self.config['scanroot']):
             if root in ignorelist:
@@ -390,9 +390,9 @@ class Meta(object):
         """
 
         try:
-            rows, column = os.popen('stty size', 'r').read().split()
+            _, column = os.popen('stty size', 'r').read().split()
             line_width = int(column)
-        except:
+        except Exception:
             line_width = 80
 
         for path in self.repolist:
