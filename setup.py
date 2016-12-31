@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 __version__ = "0.1.5"
 
-install_requires = ['pygit2>=0.23.3']
+install_requires = ['pygit2<0.25']
 
 setup(
     name='git-meta',
