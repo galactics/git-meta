@@ -435,7 +435,7 @@ def main():  # pragma: no cover
                         action='store_true', default=False,
                         help='Look for any git repository in your defined base folder')
 
-    parser.add_argument('--filter', dest='filter_status', type=str,
+    parser.add_argument('-f', '--filter', dest='filter_status', type=str,
                         action='store', choices=('OK', 'KO', 'rdiff', '?'), default=None,
                         help="""Filter git repo by status. 'rdiff' shows only out-of sync
                         repositories and '?' stands for unknown""")
