@@ -2,9 +2,9 @@
 
 from setuptools import setup, find_packages
 
-__version__ = "0.1.5"
+__version__ = "0.1.6"
 
-install_requires = ['pygit2<0.25']
+install_requires = ['pygit2']
 
 setup(
     name='git-meta',
