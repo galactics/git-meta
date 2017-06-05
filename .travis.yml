@@ -1,12 +1,13 @@
 language: python
 python:
-  - "2.6"
   - "2.7"
-  - "3.2"
-  - "3.3"
   - "3.4"
-
+  - "3.5"
+  - "3.6"
+env: LIBGIT2=~/libgit2/_install/ LD_LIBRARY_PATH=~/libgit2/_install/lib
 install:
-  - "pip install ."
-
+  - sudo apt-get install cmake
+  - wget https://raw.githubusercontent.com/libgit2/pygit2/master/.travis.sh
+  - bash .travis.sh
+  - pip install pygit2 pytest-cov
 script: py.test
