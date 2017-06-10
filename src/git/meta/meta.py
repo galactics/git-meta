@@ -215,7 +215,7 @@ class Repo(pygit2.Repository):
 
         return diffs
 
-    def stash(self):
+    def stashed(self):
         """List stashes
 
         Returns:
@@ -262,7 +262,7 @@ class Repo(pygit2.Repository):
             if remote_diff:
                 form['more'] = ["%s:%s" % tuple(x) for x in remote_diff.items()]
 
-            if self.stash():
+            if self.stashed():
                 form['more'].append("<color=yellow>stash</color>")
 
             if len(form['more']):

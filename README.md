@@ -1,6 +1,8 @@
 git-meta
 ========
 
+![Travis status](https://travis-ci.org/galactics/git-meta.svg?branch=master)
+
 Git meta is a small program enabling the power of system-wide status check of
 all you git repositories.
 
