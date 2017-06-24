@@ -357,7 +357,7 @@ class Meta(object):
                 # It looks like a repository, but is it?
                 try:
                     repo = Repo(root)
-                except KeyError:
+                except pygit2.GitError:
                     # This is not a valid git repository
                     continue
                 else:
@@ -398,7 +398,7 @@ class Meta(object):
         for path in self.repolist:
             try:
                 repo = Repo(path)
-            except KeyError:
+            except pygit2.GitError:
                 errstr = TagStr(" <color=red>%s\n    is not a valid repository</color>" % path)
                 print(errstr.shell())
                 if kwargs['clean']:
