@@ -20,13 +20,13 @@ Installation
 
 .. code-block:: shell
 
-    # pip install git-meta
+    $ pip install git-meta
 
 Alternatively, if you want to install `git-meta` from the sources:
 
 .. code-block:: shell
 
-    # python setup.py install
+    $ python setup.py install
 
 You can also install it in a `virtualenv <https://docs.python.org/3/library/venv.html>`__
 in order to test and not mess your system configuration.
