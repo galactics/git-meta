@@ -5,7 +5,7 @@ import os
 import pytest
 import pygit2
 
-from git.meta import Repo, Meta
+from gitmeta import Repo, Meta
 
 author = pygit2.Signature("test_author", "author@example.com")
 commiter = pygit2.Signature("test_commiter", "commiter@example.com")
