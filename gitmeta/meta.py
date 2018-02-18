@@ -408,10 +408,12 @@ class Meta(object):
             else:
                 if (
                         'filter_status' not in kwargs.keys() or
-                        kwargs['filter_status'] is None or
+                        kwargs['filter_status'] in (None, 'all') or
                         (kwargs['filter_status'] == "OK" and not repo.status()) or
                         (kwargs['filter_status'] == "KO" and repo.status()) or
-                        (kwargs['filter_status'] == "rdiff" and repo.remote_diff())):
+                        (kwargs['filter_status'] == "rdiff" and repo.remote_diff()) or
+                        (kwargs['filter_status'] == "NOK" and (repo.status() or repo.remote_diff()))
+                    ):
                     print(repo.statusline(line_width))
 
 
@@ -436,7 +438,8 @@ def main():  # pragma: no cover
                         help='Look for any git repository in your defined base folder')
 
     parser.add_argument('-f', '--filter', dest='filter_status', type=str,
-                        action='store', choices=('OK', 'KO', 'rdiff', '?'), default=None,
+                        action='store', choices=('all', 'OK', 'NOK', 'KO', 'rdiff', '?'),
+                        default="NOK",
                         help="""Filter git repo by status. 'rdiff' shows only out-of sync
                         repositories and '?' stands for unknown""")
 
