@@ -1,7 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Doc Here
+"""Check multiple git repositories' status
+
+Usage:
+  git-meta [-dc] [-a|-o|-n|-k|-r|-?]
+
+Options:
+  -d, --discover  Look for new git repositories
+  -c, --clean     If a non-valid repository is encountered, it is removed from
+                  the list
+  -a, --all       Display all repositories
+  -o, --ok        Display only repositories where everithing is fine
+  -n, --nok       Display only repositories where there is something happening
+  -k, --ko        Display only repositories where the working tree status is not
+                  clean
+  -r, --remote    Display only repositories needing some pushe with their
+                  remotes
+  -?              Display only repositories in unknown state
+  -h, --help      Show this help
+  --version       Display the version of git-meta
 """
 
 import os
@@ -407,52 +425,41 @@ class Meta(object):
                     self._write_repolist(repolist)
             else:
                 if (
-                        'filter_status' not in kwargs.keys() or
-                        kwargs['filter_status'] in (None, 'all') or
-                        (kwargs['filter_status'] == "OK" and not repo.status()) or
-                        (kwargs['filter_status'] == "KO" and repo.status()) or
-                        (kwargs['filter_status'] == "rdiff" and repo.remote_diff()) or
-                        (kwargs['filter_status'] == "NOK" and (repo.status() or repo.remote_diff()))
-                    ):
+                    'filter_status' not in kwargs.keys() or
+                    kwargs['filter_status'] in (None, 'all') or
+                    (kwargs['filter_status'] == "OK" and not repo.status()) or
+                    (kwargs['filter_status'] == "KO" and repo.status()) or
+                    (kwargs['filter_status'] == "remote" and repo.remote_diff()) or
+                    (kwargs['filter_status'] == "NOK" and (repo.status() or repo.remote_diff()))
+                ):
                     print(repo.statusline(line_width))
 
 
 def main():  # pragma: no cover
     """Main ``git-meta`` script function """
 
-    import argparse
+    from docopt import docopt
     import pkg_resources
-
-    meta = Meta()
 
     version = pkg_resources.require("git-meta")[0].version
 
-    description = """
-        Check all git repository statuses.
-    """
+    args = docopt(__doc__, version=version)
 
-    parser = argparse.ArgumentParser(description=description)
+    filter_status = "NOK"  # default behaviour
+    if args['--all']:
+        filter_status = "all"
+    elif args['--ok']:
+        filter_status = "OK"
+    elif args['--nok']:
+        filter_status = "NOK"
+    elif args['--ko']:
+        filter_status = "KO"
+    elif args['--remote']:
+        filter_status = "remote"
+    elif args['-?']:
+        filter_status = "?"
 
-    parser.add_argument('-d', '--discover', dest='discover',
-                        action='store_true', default=False,
-                        help='Look for any git repository in your defined base folder')
-
-    parser.add_argument('-f', '--filter', dest='filter_status', type=str,
-                        action='store', choices=('all', 'OK', 'NOK', 'KO', 'rdiff', '?'),
-                        default="NOK",
-                        help="""Filter git repo by status. 'rdiff' shows only out-of sync
-                        repositories and '?' stands for unknown""")
-
-    parser.add_argument('--clean', action='store_false',
-                        help="If a non-valid repository is encountered, it is removed from \
-                                the user\'s list")
-
-    parser.add_argument('--version', action='version',
-                        version='git-meta v{0}'.format(version))
-
-    args = vars(parser.parse_args())
-
-    if args['discover']:
+    meta = Meta()
+    if args['--discover']:
         meta.discover()
-
-    meta.scan(**args)
+    meta.scan(filter_status=filter_status, clean=args['--clean'])
