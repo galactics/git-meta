@@ -323,16 +323,16 @@ class Meta(object):
         except (IOError, FileNotFoundError):
             pass
         else:
-            for fullkey in global_config.__iter__():
+            for fullkey in global_config:
 
                 # If the config item does not start with meta it's ignored
-                if not fullkey.startswith('meta'):
+                if not fullkey.name.startswith('meta'):
                     continue
 
-                key = fullkey.partition('.')[2]
+                key = fullkey.name.partition('.')[2]
 
                 if key in self.config.keys():
-                    self.config[key] = global_config[fullkey]
+                    self.config[key] = global_config[fullkey.name]
 
     def read_list(self):
         """Read the database file to extract the paths of previously scanned
