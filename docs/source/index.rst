@@ -3,9 +3,6 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. toctree::
-   :maxdepth: 3
-
 git-meta's documentation
 ========================
 
@@ -18,14 +15,22 @@ git-meta's documentation
 :Version: |release|
 
 
-Introduction
-------------
-
 git-meta allows you to get a clear picture of all your local repository states.
 
 .. image:: /_static/terminal.png
 
 It is based on the `pygit2 <https://github.com/libgit2/pygit2>`_ library
+
+API
+---
+
+.. autoclass:: gitmeta.Meta
+    :members:
+
+.. autoclass:: gitmeta.Repo
+    :members:
+    :show-inheritance:
+
 
 Tests
 -----

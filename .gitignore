@@ -1,6 +1,7 @@
 .*.swp
 *.pyc
 *.egg-info
+.eggs/
 .coverage
 htmlcov/
 docs/build/

@@ -17,12 +17,12 @@ Options:
                   clean
   -r, --remote    Display only repositories needing some pushe with their
                   remotes
-  -?              Display only repositories in unknown state
+  -?, --unknown   Display only repositories in unknown state
   -h, --help      Show this help
   --version       Display the version of git-meta
 """
 
-__version__ = "0.1.6"
+__version__ = "0.1.7"
 
 
 import os
@@ -408,8 +408,13 @@ class Meta(object):
         with open(self.config["repolist"], "w+") as repofile:
             repofile.write("\n".join(repolist))
 
-    def scan(self, **kwargs):
+    def scan(self, clean=False, filter_status=None):
         """Scan all the repositories in the database for their statuses
+
+        Args:
+            clean (bool): If True, remove any unvalid repository from the watched list
+            filter_status (str): Only return repositiries having the given status.
+                Usable status are "OK", "KO", "remote", "NOK" and "all"
         """
 
         try:
@@ -426,20 +431,18 @@ class Meta(object):
                     " <color=red>%s\n    is not a valid repository</color>" % path
                 )
                 print(errstr.shell())
-                if kwargs["clean"]:
+                if clean:
                     repolist = self.repolist[:]
                     repolist.remove(path)
                     self._write_repolist(repolist)
             else:
                 if (
-                    "filter_status" not in kwargs.keys()
-                    or kwargs["filter_status"] in (None, "all")
-                    or (kwargs["filter_status"] == "OK" and not repo.status())
-                    or (kwargs["filter_status"] == "KO" and repo.status())
-                    or (kwargs["filter_status"] == "remote" and repo.remote_diff())
+                    filter_status in (None, "all")
+                    or (filter_status == "OK" and not repo.status())
+                    or (filter_status == "KO" and repo.status())
+                    or (filter_status == "remote" and repo.remote_diff())
                     or (
-                        kwargs["filter_status"] == "NOK"
-                        and (repo.status() or repo.remote_diff())
+                        filter_status == "NOK" and (repo.status() or repo.remote_diff())
                     )
                 ):
                     print(repo.statusline(line_width))
@@ -464,7 +467,7 @@ def main():  # pragma: no cover
         filter_status = "KO"
     elif args["--remote"]:
         filter_status = "remote"
-    elif args["-?"]:
+    elif args["--unknown"]:
         filter_status = "?"
 
     meta = Meta()

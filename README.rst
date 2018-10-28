@@ -5,6 +5,10 @@ git-meta
     :alt: Travis tests
     :target: https://travis-ci.org/galactics/git-meta
 
+.. image:: http://readthedocs.org/projects/git-meta/badge/?version=latest
+    :alt: Documentation Status
+    :target: http://git-meta.readthedocs.io/en/latest/?badge=latest
+
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :alt: Code style: black
     :target: https://github.com/ambv/black
