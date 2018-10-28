@@ -46,32 +46,32 @@ class TagStr(str):
     """
 
     _shell = {
-        'bold': ['\033[1m', '\033[21m'],
-        'b': ['\033[1m', '\033[21m'],
-        'underlined': ['\033[4m', '\033[24m'],
-        'u': ['\033[4m', '\033[24m'],
-        'reverse': ['\033[7m', '\033[27m'],
-        'color': {
-            'default': '\033[39m',
-            'end': '\033[39m',
-            'black': '\033[30m',
-            'darkred': '\033[31m',
-            'darkgreen': '\033[32m',
-            'darkyellow': '\033[33m',
-            'darkblue': '\033[34m',
-            'darkmagenta': '\033[35m',
-            'darkcyan': '\033[36m',
-            'darkgray': '\033[90m',
-            'gray': '\033[37m',
-            'red': '\033[91m',
-            'green': '\033[92m',
-            'yellow': '\033[93m',
-            'blue': '\033[94m',
-            'magenta': '\033[95m',
-            'cyan': '\033[96m',
-            'white': '\033[97m'
+        "bold": ["\033[1m", "\033[21m"],
+        "b": ["\033[1m", "\033[21m"],
+        "underlined": ["\033[4m", "\033[24m"],
+        "u": ["\033[4m", "\033[24m"],
+        "reverse": ["\033[7m", "\033[27m"],
+        "color": {
+            "default": "\033[39m",
+            "end": "\033[39m",
+            "black": "\033[30m",
+            "darkred": "\033[31m",
+            "darkgreen": "\033[32m",
+            "darkyellow": "\033[33m",
+            "darkblue": "\033[34m",
+            "darkmagenta": "\033[35m",
+            "darkcyan": "\033[36m",
+            "darkgray": "\033[90m",
+            "gray": "\033[37m",
+            "red": "\033[91m",
+            "green": "\033[92m",
+            "yellow": "\033[93m",
+            "blue": "\033[94m",
+            "magenta": "\033[95m",
+            "cyan": "\033[96m",
+            "white": "\033[97m",
         },
-        'end': '\033[0m',
+        "end": "\033[0m",
     }
 
     def __add__(self, elem):
@@ -129,21 +129,23 @@ class TagStr(str):
         for tag, code in self._shell.items():
             if isinstance(code, dict):
 
-                closing = self._shell['end']
+                closing = self._shell["end"]
 
                 # Determination of the closing tag
-                if 'end' in code.keys():
-                    closing = self._shell[tag]['end']
+                if "end" in code.keys():
+                    closing = self._shell[tag]["end"]
 
                 for tag2, code2 in code.items():
-                    regex = re.compile(r"(<{0}={1}>)(.*?)(</{0}>)".format(tag, tag2), re.DOTALL)
+                    regex = re.compile(
+                        r"(<{0}={1}>)(.*?)(</{0}>)".format(tag, tag2), re.DOTALL
+                    )
                     text = regex.sub(r"{0}\2{1}".format(code2, closing), text)
             else:
                 regex = re.compile(r"(<{0}>)(.*?)(</{0}>)".format(tag), re.DOTALL)
                 if isinstance(code, list):
                     text = regex.sub(r"{0}\2{1}".format(*code), text)
                 else:
-                    text = regex.sub(r"{0}\2{1}".format(code, self._shell['end']), text)
+                    text = regex.sub(r"{0}\2{1}".format(code, self._shell["end"]), text)
         return text
 
     def empty(self):
@@ -157,8 +159,8 @@ class TagStr(str):
         Returns:
             str: Refined string without tags
         """
-        regex = re.compile(r'(<.*?>)')
-        return regex.sub('', self)
+        regex = re.compile(r"(<.*?>)")
+        return regex.sub("", self)
 
 
 class Repo(pygit2.Repository):
@@ -243,7 +245,7 @@ class Repo(pygit2.Repository):
             bool: True if there is stashed modifications
         """
         for ref in self.listall_references():
-            if ref.startswith('refs/stash'):
+            if ref.startswith("refs/stash"):
                 return True
         return False
 
@@ -254,45 +256,42 @@ class Repo(pygit2.Repository):
             string: Status line as used by git-meta
         """
 
-        form = {
-            'filler': "",
-            'more': [],
-        }
+        form = {"filler": "", "more": []}
 
         max_path_len = line_width - 30
 
         template = " {path} {filler}{more} {status}"
 
         if self.is_bare:
-            form['path'] = self.path
-            form['more'] = ""
-            form['status'] = "[<color=yellow>BARE</color>]"
+            form["path"] = self.path
+            form["more"] = ""
+            form["status"] = "[<color=yellow>BARE</color>]"
         else:
 
             if len(self.workdir) <= max_path_len + 3:
-                form['path'] = self.workdir
+                form["path"] = self.workdir
             else:
-                form['path'] = "..." + self.workdir[-max_path_len:]
+                form["path"] = "..." + self.workdir[-max_path_len:]
 
             if not self.status():
-                form['status'] = "[ <color=green>OK</color> ]"
+                form["status"] = "[ <color=green>OK</color> ]"
             else:
-                form['status'] = "[ <color=red>KO</color> ]"
+                form["status"] = "[ <color=red>KO</color> ]"
 
             remote_diff = self.remote_diff()
             if remote_diff:
-                form['more'] = ["%s:%s" % tuple(x) for x in remote_diff.items()]
+                form["more"] = ["%s:%s" % tuple(x) for x in remote_diff.items()]
 
             if self.stashed():
-                form['more'].append("<color=yellow>stash</color>")
+                form["more"].append("<color=yellow>stash</color>")
 
-            if len(form['more']):
-                form['more'] = "(" + ",".join(form['more']) + ")"
+            if len(form["more"]):
+                form["more"] = "(" + ",".join(form["more"]) + ")"
             else:
-                form['more'] = ""
+                form["more"] = ""
 
         line = TagStr(template.format(**form))
-        form['filler'] = " " * (line_width - len(line.empty()))
+        form["filler"] = " " * (line_width - len(line.empty()))
 
         line = TagStr(template.format(**form))
         return line.shell()
@@ -315,9 +314,9 @@ class Meta(object):
 
         # Default locations
         self.config = {
-            'repolist': os.path.join(os.environ['HOME'], '.git_meta_repolist'),
-            'ignorelist': os.path.join(os.environ['HOME'], '.git_meta_ignore'),
-            'scanroot': os.environ['HOME']
+            "repolist": os.path.join(os.environ["HOME"], ".git_meta_repolist"),
+            "ignorelist": os.path.join(os.environ["HOME"], ".git_meta_ignore"),
+            "scanroot": os.environ["HOME"],
         }
 
         # Parsing of the global config file
@@ -329,10 +328,10 @@ class Meta(object):
             for fullkey in global_config:
 
                 # If the config item does not start with meta it's ignored
-                if not fullkey.name.startswith('meta'):
+                if not fullkey.name.startswith("meta"):
                     continue
 
-                key = fullkey.name.partition('.')[2]
+                key = fullkey.name.partition(".")[2]
 
                 if key in self.config.keys():
                     self.config[key] = global_config[fullkey.name]
@@ -342,7 +341,7 @@ class Meta(object):
         repositories
         """
 
-        with open(self.config['repolist']) as repolist_f:
+        with open(self.config["repolist"]) as repolist_f:
             self.repolist = repolist_f.read().splitlines()
 
     def discover(self):
@@ -350,18 +349,20 @@ class Meta(object):
         """
 
         try:
-            with open(self.config['ignorelist']) as ignore_file:
+            with open(self.config["ignorelist"]) as ignore_file:
                 ignorelist = ignore_file.read().splitlines()
         except (IOError, FileNotFoundError):
             ignorelist = []
 
         repolist = []
 
-        print("Discovery of repositories in {0} sub-directories".format(
-            self.config['scanroot']
-        ))
+        print(
+            "Discovery of repositories in {0} sub-directories".format(
+                self.config["scanroot"]
+            )
+        )
 
-        for root, dirs, files in os.walk(self.config['scanroot']):
+        for root, dirs, files in os.walk(self.config["scanroot"]):
             if root in ignorelist:
                 # we also want to ignore every subfolder
                 del dirs[:]
@@ -369,12 +370,13 @@ class Meta(object):
 
             # Check for globing pattern match to ignore
             for ignore_path in ignorelist:
-                if (glob.has_magic(ignore_path) and
-                        glob.fnmatch.fnmatch(root, ignore_path)):
+                if glob.has_magic(ignore_path) and glob.fnmatch.fnmatch(
+                    root, ignore_path
+                ):
                     del dirs[:]
                     continue
 
-            if '.git' in dirs or 'config' in files:
+            if ".git" in dirs or "config" in files:
                 # It looks like a repository, but is it?
                 try:
                     repo = Repo(root)
@@ -403,7 +405,7 @@ class Meta(object):
         Args:
             repolist (list of str)
         """
-        with open(self.config['repolist'], 'w+') as repofile:
+        with open(self.config["repolist"], "w+") as repofile:
             repofile.write("\n".join(repolist))
 
     def scan(self, **kwargs):
@@ -411,7 +413,7 @@ class Meta(object):
         """
 
         try:
-            _, column = os.popen('stty size', 'r').read().split()
+            _, column = os.popen("stty size", "r").read().split()
             line_width = int(column)
         except Exception:
             line_width = 80
@@ -420,20 +422,25 @@ class Meta(object):
             try:
                 repo = Repo(path)
             except pygit2.GitError:
-                errstr = TagStr(" <color=red>%s\n    is not a valid repository</color>" % path)
+                errstr = TagStr(
+                    " <color=red>%s\n    is not a valid repository</color>" % path
+                )
                 print(errstr.shell())
-                if kwargs['clean']:
+                if kwargs["clean"]:
                     repolist = self.repolist[:]
                     repolist.remove(path)
                     self._write_repolist(repolist)
             else:
                 if (
-                    'filter_status' not in kwargs.keys() or
-                    kwargs['filter_status'] in (None, 'all') or
-                    (kwargs['filter_status'] == "OK" and not repo.status()) or
-                    (kwargs['filter_status'] == "KO" and repo.status()) or
-                    (kwargs['filter_status'] == "remote" and repo.remote_diff()) or
-                    (kwargs['filter_status'] == "NOK" and (repo.status() or repo.remote_diff()))
+                    "filter_status" not in kwargs.keys()
+                    or kwargs["filter_status"] in (None, "all")
+                    or (kwargs["filter_status"] == "OK" and not repo.status())
+                    or (kwargs["filter_status"] == "KO" and repo.status())
+                    or (kwargs["filter_status"] == "remote" and repo.remote_diff())
+                    or (
+                        kwargs["filter_status"] == "NOK"
+                        and (repo.status() or repo.remote_diff())
+                    )
                 ):
                     print(repo.statusline(line_width))
 
@@ -447,20 +454,20 @@ def main():  # pragma: no cover
     args = docopt(__doc__, version=__version__)
 
     filter_status = "NOK"  # default behaviour
-    if args['--all']:
+    if args["--all"]:
         filter_status = "all"
-    elif args['--ok']:
+    elif args["--ok"]:
         filter_status = "OK"
-    elif args['--nok']:
+    elif args["--nok"]:
         filter_status = "NOK"
-    elif args['--ko']:
+    elif args["--ko"]:
         filter_status = "KO"
-    elif args['--remote']:
+    elif args["--remote"]:
         filter_status = "remote"
-    elif args['-?']:
+    elif args["-?"]:
         filter_status = "?"
 
     meta = Meta()
-    if args['--discover']:
+    if args["--discover"]:
         meta.discover()
-    meta.scan(filter_status=filter_status, clean=args['--clean'])
+    meta.scan(filter_status=filter_status, clean=args["--clean"])

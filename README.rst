@@ -5,6 +5,10 @@ git-meta
     :alt: Travis tests
     :target: https://travis-ci.org/galactics/git-meta
 
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+    :alt: Code style: black
+    :target: https://github.com/ambv/black
+
 Git meta is a small program enabling the power of system-wide status check of
 all you git repositories.
 
