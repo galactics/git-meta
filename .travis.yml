@@ -1,13 +1,22 @@
 language: python
-python:
-  - "2.7"
-  - "3.4"
-  - "3.5"
-  - "3.6"
-env: LIBGIT2=~/libgit2/_install/ LD_LIBRARY_PATH=~/libgit2/_install/lib
+
+matrix:
+  include:
+  # Create travis test builds using specific tox environment
+  - python: 2.7
+    env: TOX_ENV=py27 LIBGIT2=~/libgit2/_install/ LD_LIBRARY_PATH=~/libgit2/_install/lib
+  - python: 3.5
+    env: TOX_ENV=py35 LIBGIT2=~/libgit2/_install/ LD_LIBRARY_PATH=~/libgit2/_install/lib
+  - python: 3.6
+    env: TOX_ENV=py36 LIBGIT2=~/libgit2/_install/ LD_LIBRARY_PATH=~/libgit2/_install/lib
+  - python: 3.7
+    env: TOX_ENV=py37 LIBGIT2=~/libgit2/_install/ LD_LIBRARY_PATH=~/libgit2/_install/lib
+    dist: xenial
+
 install:
   - sudo apt-get install cmake
   - wget https://raw.githubusercontent.com/libgit2/pygit2/master/.travis.sh
   - bash .travis.sh
-  - pip install pygit2 pytest-cov
-script: py.test
+  - pip install pygit2 tox
+
+script: tox -e $TOX_ENV
