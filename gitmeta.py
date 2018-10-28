@@ -22,6 +22,9 @@ Options:
   --version       Display the version of git-meta
 """
 
+__version__ = "0.1.6"
+
+
 import os
 import re
 import glob
@@ -441,9 +444,7 @@ def main():  # pragma: no cover
     from docopt import docopt
     import pkg_resources
 
-    version = pkg_resources.require("git-meta")[0].version
-
-    args = docopt(__doc__, version=version)
+    args = docopt(__doc__, version=__version__)
 
     filter_status = "NOK"  # default behaviour
     if args['--all']:
