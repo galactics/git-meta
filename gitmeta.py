@@ -442,7 +442,11 @@ class Meta(object):
                     or (filter_status == "KO" and repo.status())
                     or (filter_status == "remote" and repo.remote_diff())
                     or (
-                        filter_status == "NOK" and (repo.status() or repo.remote_diff())
+                        filter_status == "NOK" and (
+                            repo.status()
+                            or repo.remote_diff()
+                            or repo.stashed()
+                        )
                     )
                 ):
                     print(repo.statusline(line_width))
