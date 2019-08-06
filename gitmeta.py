@@ -4,7 +4,7 @@
 """Check multiple git repositories' status
 
 Usage:
-  git-meta [-dc] [-a|-o|-n|-k|-r|-?]
+  git-meta [-dc] [-a|-o|-n|-k|-r|-?] [-t]
 
 Options:
   -d, --discover  Look for new git repositories
@@ -15,11 +15,12 @@ Options:
   -n, --nok       Display only repositories where there is something happening
   -k, --ko        Display only repositories where the working tree status is not
                   clean
-  -r, --remote    Display only repositories needing some pushe with their
+  -r, --remote    Display only repositories needing some pushes with their
                   remotes
   -?, --unknown   Display only repositories in unknown state
   -h, --help      Show this help
   --version       Display the version of git-meta
+  -t, --terminal  Open terminals for each selected repository
 """
 
 __version__ = "0.1.7"
@@ -29,6 +30,7 @@ import os
 import re
 import glob
 import pygit2
+import subprocess
 
 
 class TagStr(str):
@@ -408,21 +410,7 @@ class Meta(object):
         with open(self.config["repolist"], "w+") as repofile:
             repofile.write("\n".join(repolist))
 
-    def scan(self, clean=False, filter_status=None):
-        """Scan all the repositories in the database for their statuses
-
-        Args:
-            clean (bool): If True, remove any unvalid repository from the watched list
-            filter_status (str): Only return repositiries having the given status.
-                Usable status are "OK", "KO", "remote", "NOK" and "all"
-        """
-
-        try:
-            _, column = os.popen("stty size", "r").read().split()
-            line_width = int(column)
-        except Exception:
-            line_width = 80
-
+    def iter(self, clean=False, filter_status=None):
         for path in self.repolist:
             try:
                 repo = Repo(path)
@@ -449,7 +437,34 @@ class Meta(object):
                         )
                     )
                 ):
-                    print(repo.statusline(line_width))
+                    yield repo
+
+    def scan(self, clean=False, filter_status=None):
+        """Scan all the repositories in the database for their statuses
+
+        Args:
+            clean (bool): If True, remove any unvalid repository from the watched list
+            filter_status (str): Only return repositiries having the given status.
+                Usable status are "OK", "KO", "remote", "NOK" and "all"
+        """
+
+        try:
+            _, column = os.popen("stty size", "r").read().split()
+            line_width = int(column)
+        except Exception:
+            line_width = 80
+
+        for repo in self.iter(clean=clean, filter_status=filter_status):
+            print(repo.statusline(line_width))
+
+    def terminal(self, filter_status=None):
+
+        for repo in self.iter(filter_status=filter_status):
+            subprocess.Popen(
+                ["gnome-terminal", "--working-directory", repo.workdir],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
 
 
 def main():  # pragma: no cover
@@ -477,4 +492,8 @@ def main():  # pragma: no cover
     meta = Meta()
     if args["--discover"]:
         meta.discover()
+
     meta.scan(filter_status=filter_status, clean=args["--clean"])
+
+    if args["--terminal"]:
+        meta.terminal(filter_status=filter_status)
