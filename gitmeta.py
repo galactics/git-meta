@@ -445,11 +445,8 @@ class Meta(object):
                     or (filter_status == "remote" and repo.remote_diff())
                     or (filter_status == "no-remote" and not repo.has_remote())
                     or (
-                        filter_status == "NOK" and (
-                            repo.status()
-                            or repo.remote_diff()
-                            or repo.stashed()
-                        )
+                        filter_status == "NOK"
+                        and (repo.status() or repo.remote_diff() or repo.stashed())
                     )
                 ):
                     yield repo
