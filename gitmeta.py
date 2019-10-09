@@ -4,7 +4,7 @@
 """Check multiple git repositories' status
 
 Usage:
-  git-meta [-dc] [-a|-o|-n|-k|-r|-?] [-t]
+  git-meta [-dc] [-a|-o|-n|-k|-r|-?|--no-remote] [-t]
 
 Options:
   -d, --discover  Look for new git repositories
@@ -17,6 +17,7 @@ Options:
                   clean
   -r, --remote    Display only repositories needing some pushes with their
                   remotes
+  --no-remote     List repositories having no remote set
   -?, --unknown   Display only repositories in unknown state
   -h, --help      Show this help
   --version       Display the version of git-meta
@@ -240,6 +241,19 @@ class Repo(pygit2.Repository):
 
         return diffs
 
+    def has_remote(self):
+        """
+        Return:
+            bool: True if the repository has a remote branch defined for at least
+                local branch
+        """
+        for branch_name in self.listall_branches(pygit2.GIT_BRANCH_LOCAL):
+            branch = self.lookup_branch(branch_name)
+            if branch.upstream is not None:
+                return True
+        else:
+            return False
+
     def stashed(self):
         """List stashes
 
@@ -429,6 +443,7 @@ class Meta(object):
                     or (filter_status == "OK" and not repo.status())
                     or (filter_status == "KO" and repo.status())
                     or (filter_status == "remote" and repo.remote_diff())
+                    or (filter_status == "no-remote" and not repo.has_remote())
                     or (
                         filter_status == "NOK" and (
                             repo.status()
@@ -475,6 +490,8 @@ def main():  # pragma: no cover
 
     args = docopt(__doc__, version=__version__)
 
+    # print(args)
+
     filter_status = "NOK"  # default behaviour
     if args["--all"]:
         filter_status = "all"
@@ -488,6 +505,8 @@ def main():  # pragma: no cover
         filter_status = "remote"
     elif args["--unknown"]:
         filter_status = "?"
+    elif args["--no-remote"]:
+        filter_status = "no-remote"
 
     meta = Meta()
     if args["--discover"]:
