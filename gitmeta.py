@@ -430,8 +430,12 @@ class Meta(object):
                 repo = Repo(path)
             except pygit2.GitError:
                 errstr = TagStr(
-                    " <color=red>%s\n    is not a valid repository</color>" % path
+                    "<color=red>The directory\n  %s\nis not a valid repository." % path
                 )
+                if clean:
+                    errstr += " Discarded</color>"
+                else:
+                    errstr += " Use the option --clean to discard it.</color>"
                 print(errstr.shell())
                 if clean:
                     repolist = self.repolist[:]
