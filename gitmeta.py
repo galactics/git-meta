@@ -4,7 +4,7 @@
 """Check multiple git repositories' status
 
 Usage:
-  git-meta [-dc] [-a|-o|-n|-k|-r|-?]
+  git-meta [-dc] [-a|-o|-n|-k|-r|-?|--no-remote] [-t]
 
 Options:
   -d, --discover  Look for new git repositories
@@ -15,20 +15,38 @@ Options:
   -n, --nok       Display only repositories where there is something happening
   -k, --ko        Display only repositories where the working tree status is not
                   clean
-  -r, --remote    Display only repositories needing some pushe with their
+  -r, --remote    Display only repositories needing some pushes with their
                   remotes
+  --no-remote     List repositories having no remote set
   -?, --unknown   Display only repositories in unknown state
+  -t, --terminal  Open terminals for each selected repository
   -h, --help      Show this help
   --version       Display the version of git-meta
+  --pdb           Launch debugger when crashing
 """
 
-__version__ = "0.1.7"
+__version__ = "0.2"
 
 
 import os
 import re
+import git
 import glob
-import pygit2
+import logging
+import subprocess
+from pathlib import Path
+from appdirs import user_cache_dir
+
+log = logging.getLogger(__name__)
+
+
+def pm_on_crash(type, value, tb):
+    """Exception hook, in order to start pdb when an exception occurs"""
+    import pdb
+    import traceback
+
+    traceback.print_exception(type, value, tb)
+    pdb.pm()
 
 
 class TagStr(str):
@@ -163,35 +181,11 @@ class TagStr(str):
         return regex.sub("", self)
 
 
-class Repo(pygit2.Repository):
+class Repo(git.Repo):
     """Class representing a repository.
 
     Allows to perform common git commands
     """
-
-    def status(self):
-        """Gives the status of the current branch.
-
-        Contrarily to pygit2.Repository, self.status() does not show the
-        ignored files.
-
-        Returns:
-            dict : Each key stand for a file with a non-clean status, and the
-                value is the code of this non-clean status.
-                See pygit2.GIT_STATUS_* for details.  If empty, all files are
-                clean.
-        """
-
-        status = super(Repo, self).status()
-
-        # As pygit2.Repository.status() gives also the status of ignored
-        # files, we have to get rid of it ourselves.
-        tmp = dict(status)
-        for key, value in tmp.items():
-            if value == pygit2.GIT_STATUS_IGNORED:
-                del status[key]
-
-        return status
 
     def remote_diff(self):
         """For each branch with a remote counterpart, give the number of
@@ -203,27 +197,27 @@ class Repo(pygit2.Repository):
         """
         diffs = {}
 
-        for branch_name in self.listall_branches(pygit2.GIT_BRANCH_LOCAL):
-            branch = self.lookup_branch(branch_name)
-            if branch.upstream is not None:
-                remote = branch.upstream.peel()
-                local = branch.peel()
+        for branch in self.branches:
+            if branch.tracking_branch() is not None:
+                remote = branch.tracking_branch()
+                base = self.merge_base(branch, remote)[0]
 
-                base = self.get(self.merge_base(local.id, remote.id))
-
-                count_desc = 0
-                # From local branch to base
-                for commit in self.walk(local.id, pygit2.GIT_SORT_TOPOLOGICAL):
-                    if commit.id == base.id:
-                        break
-                    count_desc += 1
-
-                count_asc = 0
-                # From remote branch to base
-                for commit in self.walk(remote.id, pygit2.GIT_SORT_TOPOLOGICAL):
-                    if commit.id == base.id:
-                        break
-                    count_asc += 1
+                # From base to local branch
+                count_desc = len(
+                    list(
+                        self.iter_commits(
+                            "{}..{}".format(base.hexsha, branch.commit.hexsha)
+                        )
+                    )
+                )
+                # From base to remote branch
+                count_asc = len(
+                    list(
+                        self.iter_commits(
+                            "{}..{}".format(base.hexsha, remote.commit.hexsha)
+                        )
+                    )
+                )
 
                 # Express remote difference in the '__git_ps1' fashion
                 if count_asc or count_desc:
@@ -234,9 +228,21 @@ class Repo(pygit2.Repository):
                     else:
                         count = str(-count_asc)
 
-                    diffs[branch.shorthand] = count
+                    diffs[branch.name] = count
 
         return diffs
+
+    def has_remote(self):
+        """
+        Return:
+            bool: True if the repository has a remote branch defined for at least
+                local branch
+        """
+        for branch in self.branches():
+            if branch.tracking_branch() is not None:
+                return True
+        else:
+            return False
 
     def stashed(self):
         """List stashes
@@ -244,10 +250,7 @@ class Repo(pygit2.Repository):
         Returns:
             bool: True if there is stashed modifications
         """
-        for ref in self.listall_references():
-            if ref.startswith("refs/stash"):
-                return True
-        return False
+        return len(self.git.stash("list")) > 0
 
     def statusline(self, line_width=80):
         """Create the status line for the selected repository.
@@ -262,18 +265,18 @@ class Repo(pygit2.Repository):
 
         template = " {path} {filler}{more} {status}"
 
-        if self.is_bare:
+        if self.bare:
             form["path"] = self.path
             form["more"] = ""
             form["status"] = "[<color=yellow>BARE</color>]"
         else:
 
-            if len(self.workdir) <= max_path_len + 3:
-                form["path"] = self.workdir
+            if len(self.working_dir) <= max_path_len + 3:
+                form["path"] = self.working_dir
             else:
-                form["path"] = "..." + self.workdir[-max_path_len:]
+                form["path"] = "..." + self.working_dir[-max_path_len:]
 
-            if not self.status():
+            if not self.is_dirty():
                 form["status"] = "[ <color=green>OK</color> ]"
             else:
                 form["status"] = "[ <color=red>KO</color> ]"
@@ -312,29 +315,24 @@ class Meta(object):
 
     def _define_paths(self):
 
+        cache = user_cache_dir("gitmeta", "gitmeta")
+
         # Default locations
         self.config = {
-            "repolist": os.path.join(os.environ["HOME"], ".git_meta_repolist"),
-            "ignorelist": os.path.join(os.environ["HOME"], ".git_meta_ignore"),
+            "repolist": os.path.join(cache, "repolist.txt"),
+            "ignorelist": os.path.join(cache, "ignore.txt"),
             "scanroot": os.environ["HOME"],
         }
 
         # Parsing of the global config file
         try:
-            global_config = pygit2.Config.get_global_config()
+            global_config = git.config.GitConfigParser(config_level="global")
         except (IOError, FileNotFoundError):
             pass
         else:
-            for fullkey in global_config:
-
-                # If the config item does not start with meta it's ignored
-                if not fullkey.name.startswith("meta"):
-                    continue
-
-                key = fullkey.name.partition(".")[2]
-
-                if key in self.config.keys():
-                    self.config[key] = global_config[fullkey.name]
+            if global_config.has_section("meta"):
+                for k, v in global_config.items("meta"):
+                    self.config[k] = v
 
     def read_list(self):
         """Read the database file to extract the paths of previously scanned
@@ -345,8 +343,7 @@ class Meta(object):
             self.repolist = repolist_f.read().splitlines()
 
     def discover(self):
-        """Scan the subfolders to discover repositories
-        """
+        """Scan the subfolders to discover repositories"""
 
         try:
             with open(self.config["ignorelist"]) as ignore_file:
@@ -380,12 +377,12 @@ class Meta(object):
                 # It looks like a repository, but is it?
                 try:
                     repo = Repo(root)
-                except pygit2.GitError:
+                except git.exc.GitError:
                     # This is not a valid git repository
                     continue
                 else:
                     # Success !!
-                    repolist.append(repo.path)
+                    repolist.append(repo.working_dir)
 
                     # In case of found repository it's not necessary
                     # to digg deeper.
@@ -405,8 +402,41 @@ class Meta(object):
         Args:
             repolist (list of str)
         """
+        os.makedirs(os.path.dirname(self.config["repolist"]), exist_ok=True)
+
         with open(self.config["repolist"], "w+") as repofile:
             repofile.write("\n".join(repolist))
+
+    def iter(self, clean=False, filter_status=None):
+        for path in self.repolist:
+            try:
+                repo = Repo(path)
+            except pygit2.GitError:
+                errstr = TagStr(
+                    "<color=red>The directory\n  %s\nis not a valid repository." % path
+                )
+                if clean:
+                    errstr += " Discarded</color>"
+                else:
+                    errstr += " Use the option --clean to discard it.</color>"
+                print(errstr.shell())
+                if clean:
+                    repolist = self.repolist[:]
+                    repolist.remove(path)
+                    self._write_repolist(repolist)
+            else:
+                if (
+                    filter_status in (None, "all")
+                    or (filter_status == "OK" and not repo.is_dirty())
+                    or (filter_status == "KO" and repo.is_dirty())
+                    or (filter_status == "remote" and repo.remote_diff())
+                    or (filter_status == "no-remote" and not repo.has_remote())
+                    or (
+                        filter_status == "NOK"
+                        and (repo.is_dirty() or repo.remote_diff() or repo.stashed())
+                    )
+                ):
+                    yield repo
 
     def scan(self, clean=False, filter_status=None):
         """Scan all the repositories in the database for their statuses
@@ -423,42 +453,32 @@ class Meta(object):
         except Exception:
             line_width = 80
 
-        for path in self.repolist:
-            try:
-                repo = Repo(path)
-            except pygit2.GitError:
-                errstr = TagStr(
-                    " <color=red>%s\n    is not a valid repository</color>" % path
-                )
-                print(errstr.shell())
-                if clean:
-                    repolist = self.repolist[:]
-                    repolist.remove(path)
-                    self._write_repolist(repolist)
-            else:
-                if (
-                    filter_status in (None, "all")
-                    or (filter_status == "OK" and not repo.status())
-                    or (filter_status == "KO" and repo.status())
-                    or (filter_status == "remote" and repo.remote_diff())
-                    or (
-                        filter_status == "NOK" and (
-                            repo.status()
-                            or repo.remote_diff()
-                            or repo.stashed()
-                        )
-                    )
-                ):
-                    print(repo.statusline(line_width))
+        for repo in self.iter(clean=clean, filter_status=filter_status):
+            print(repo.statusline(line_width))
+
+    def terminal(self, filter_status=None):
+
+        for repo in self.iter(filter_status=filter_status):
+            subprocess.Popen(
+                ["gnome-terminal", "--working-directory", repo.working_dir],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
 
 
 def main():  # pragma: no cover
     """Main ``git-meta`` script function """
 
+    import sys
     from docopt import docopt
-    import pkg_resources
+
+    if "--pdb" in sys.argv:
+        sys.argv.remove("--pdb")
+        func = pm_on_crash
 
     args = docopt(__doc__, version=__version__)
+
+    # print(args)
 
     filter_status = "NOK"  # default behaviour
     if args["--all"]:
@@ -473,8 +493,14 @@ def main():  # pragma: no cover
         filter_status = "remote"
     elif args["--unknown"]:
         filter_status = "?"
+    elif args["--no-remote"]:
+        filter_status = "no-remote"
 
     meta = Meta()
     if args["--discover"]:
         meta.discover()
+
     meta.scan(filter_status=filter_status, clean=args["--clean"])
+
+    if args["--terminal"]:
+        meta.terminal(filter_status=filter_status)

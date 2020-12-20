@@ -19,7 +19,7 @@ git-meta allows you to get a clear picture of all your local repository states.
 
 .. image:: /_static/terminal.png
 
-It is based on the `pygit2 <https://github.com/libgit2/pygit2>`_ library
+It is based on the `gitpython <https://github.com/gitpython-developers/GitPython>`_ library
 
 API
 ---
