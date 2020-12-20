@@ -25,7 +25,7 @@ Options:
   --pdb           Launch debugger when crashing
 """
 
-__version__ = "0.2"
+__version__ = "0.2.1"
 
 
 import os
