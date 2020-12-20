@@ -19,9 +19,7 @@ all you git repositories.
 .. image:: docs/source/_static/terminal.png
     :alt: Terminal output
 
-It uses `pygit2 <https://github.com/libgit2/pygit2>`__, which is Python bindings of
-`libgit2 <https://github.com/libgit2/libgit2>`__, a standalone git library writen
-in C.
+It uses `gitpython <https://github.com/gitpython-developers/GitPython>`__.
 
 Installation
 ------------
@@ -60,7 +58,7 @@ Just type
 
 .. code-block:: shell
 
-    $ py.test
+    $ pytest
 
 at the root of the repository.
 
