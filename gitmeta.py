@@ -238,7 +238,7 @@ class Repo(git.Repo):
             bool: True if the repository has a remote branch defined for at least
                 local branch
         """
-        for branch in self.branches():
+        for branch in self.branches:
             if branch.tracking_branch() is not None:
                 return True
         else:
