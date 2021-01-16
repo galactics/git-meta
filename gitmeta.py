@@ -187,6 +187,10 @@ class Repo(git.Repo):
     Allows to perform common git commands
     """
 
+    def is_dirty(self):
+        """Override of git.Repo.is_dirty to include untracked files in dirty state"""
+        return super().is_dirty() or len(self.untracked_files) != 0
+
     def remote_diff(self):
         """For each branch with a remote counterpart, give the number of
         commit difference
