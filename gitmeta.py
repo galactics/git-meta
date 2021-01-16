@@ -411,7 +411,7 @@ class Meta(object):
         for path in self.repolist:
             try:
                 repo = Repo(path)
-            except pygit2.GitError:
+            except git.exc.GitError:
                 errstr = TagStr(
                     "<color=red>The directory\n  %s\nis not a valid repository." % path
                 )
