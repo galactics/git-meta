@@ -508,3 +508,7 @@ def main():  # pragma: no cover
 
     if args["--terminal"]:
         meta.terminal(filter_status=filter_status)
+
+
+if __name__ == "__main__":
+    main()
