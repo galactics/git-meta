@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import os
-import pytest
 import git
+from pytest import fixture, mark
 
 from gitmeta import Repo, Meta
 
@@ -14,7 +14,7 @@ filename = "dummy_file.txt"
 ignored_filename = "ignored_file.txt"
 
 
-@pytest.yield_fixture
+@fixture
 def empty_repo(tmpdir):
 
     repo_path = str(tmpdir.mkdir("repo.git"))
@@ -22,7 +22,7 @@ def empty_repo(tmpdir):
     yield Repo(repo_path)
 
 
-@pytest.fixture
+@fixture
 def clean_repo(empty_repo):
 
     filepath = os.path.join(empty_repo.working_dir, filename)
@@ -36,7 +36,7 @@ def clean_repo(empty_repo):
     return empty_repo
 
 
-@pytest.fixture
+@fixture
 def dirty_repo(clean_repo):
 
     filepath = os.path.join(clean_repo.working_dir, filename)
@@ -47,7 +47,7 @@ def dirty_repo(clean_repo):
     return clean_repo
 
 
-@pytest.fixture
+@fixture
 def dirty_index(dirty_repo):
     filepath = os.path.join(dirty_repo.working_dir, filename)
 
@@ -57,14 +57,14 @@ def dirty_index(dirty_repo):
     return dirty_repo
 
 
-@pytest.fixture
+@fixture
 def clean_repo2(dirty_index):
     dirty_index.index.commit("Second commit", author=author, committer=committer)
 
     return dirty_index
 
 
-@pytest.fixture
+@fixture
 def ignored_file(clean_repo2):
 
     gitignore_path = os.path.join(clean_repo2.working_dir, ".gitignore")
@@ -82,7 +82,7 @@ def ignored_file(clean_repo2):
     return clean_repo2
 
 
-@pytest.fixture
+@fixture
 def clone(tmpdir, clean_repo2):
 
     cloned_repo_path = str(tmpdir.mkdir("clone.git"))
@@ -128,7 +128,7 @@ def clone(tmpdir, clean_repo2):
     return (clean_repo2, clone_repo)
 
 
-@pytest.fixture
+@fixture
 def stashed(clean_repo2):
     filepath = os.path.join(clean_repo2.working_dir, filename)
 
@@ -140,12 +140,12 @@ def stashed(clean_repo2):
     return clean_repo2
 
 
-@pytest.fixture
+@fixture
 def mk_dumb_repo(tmpdir):
     return str(tmpdir.makedirs("dumbrepos/.git/"))
 
 
-@pytest.fixture
+@fixture
 def pulling(clone):
     # We go back two commits, in order to have a clean merge
     # i.e. we decide that the original repository has a better
@@ -160,7 +160,7 @@ def pulling(clone):
     return clone
 
 
-@pytest.yield_fixture
+@fixture
 def meta(tmpdir, pulling):
     meta = Meta()
     old = meta.config["scanroot"]
@@ -223,7 +223,7 @@ def test_meta_discovery(meta, capsys):
     assert err == ""
 
 
-@pytest.mark.skip
+@mark.skip
 def test_meta_scan(meta, dirty_repo, capsys):
 
     meta.discover()
