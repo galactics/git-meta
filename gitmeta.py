@@ -347,7 +347,12 @@ class Meta(object):
             self.repolist = repolist_f.read().splitlines()
 
     def discover(self):
-        """Scan the subfolders to discover repositories"""
+        """Scan the subfolders to discover repositories
+
+        The root folder can be defined with the ``meta.scanroot`` field
+        in your .gitconfig file. If not defined, the default scanroot
+        is $HOME.
+        """
 
         try:
             with open(self.config["ignorelist"]) as ignore_file:
