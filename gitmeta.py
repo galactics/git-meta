@@ -461,17 +461,25 @@ class Meta(object):
             print(repo.statusline(line_width))
 
     def terminal(self, filter_status=None):
+        """Open a terminal on each repository selected by the filter
 
-        for repo in self.iter(filter_status=filter_status):
-            subprocess.Popen(
-                ["gnome-terminal", "--working-directory", repo.working_dir],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
+        see :meth:`Meta.scan` for details on filter_status
+        """
+        try:
+            terminal = self.config["terminal"].split()
+        except KeyError:
+            print("No terminal defined. set the meta.terminal field in your .gitconfig")
+        else:
+            for repo in self.iter(filter_status=filter_status):
+                subprocess.Popen(
+                    [*terminal, repo.working_dir],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
 
 
 def main():  # pragma: no cover
-    """Main ``git-meta`` script function """
+    """Main ``git-meta`` script function"""
 
     import sys
     from docopt import docopt
