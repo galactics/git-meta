@@ -16,6 +16,9 @@ matrix:
   - python: 3.9
     env: TOX_ENV=py39
     dist: xenial
+  - python: 3.10
+    env: TOX_ENV=py310
+    dist: xenial
 
 install:
   - pip install tox
