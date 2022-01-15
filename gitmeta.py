@@ -36,7 +36,10 @@ import logging
 import subprocess
 from pathlib import Path
 from appdirs import user_cache_dir
+from rich.console import Console
+from rich.text import Text
 
+console = Console()
 log = logging.getLogger(__name__)
 
 
@@ -47,138 +50,6 @@ def pm_on_crash(type, value, tb):
 
     traceback.print_exception(type, value, tb)
     pdb.pm()
-
-
-class TagStr(str):
-    """Tagged strings
-
-    Allow you to decorate a bit your terminal output in a html fashion.
-    Of course everything is not ported.
-
-    Example:
-
-    .. code-block:: python
-
-        TagStr("Hello, I'm a <u>decorated</u> string")
-        TagStr("What a coincidence, <color=green>me too</color>")
-    """
-
-    _shell = {
-        "bold": ["\033[1m", "\033[21m"],
-        "b": ["\033[1m", "\033[21m"],
-        "underlined": ["\033[4m", "\033[24m"],
-        "u": ["\033[4m", "\033[24m"],
-        "reverse": ["\033[7m", "\033[27m"],
-        "color": {
-            "default": "\033[39m",
-            "end": "\033[39m",
-            "black": "\033[30m",
-            "darkred": "\033[31m",
-            "darkgreen": "\033[32m",
-            "darkyellow": "\033[33m",
-            "darkblue": "\033[34m",
-            "darkmagenta": "\033[35m",
-            "darkcyan": "\033[36m",
-            "darkgray": "\033[90m",
-            "gray": "\033[37m",
-            "red": "\033[91m",
-            "green": "\033[92m",
-            "yellow": "\033[93m",
-            "blue": "\033[94m",
-            "magenta": "\033[95m",
-            "cyan": "\033[96m",
-            "white": "\033[97m",
-        },
-        "end": "\033[0m",
-    }
-
-    def __add__(self, elem):
-        """Concatenation handling
-
-        >>> a = TagStr("Hello ")
-        >>> b = "World"
-        >>> type(a+b) is TagStr
-        True
-        >>> c = TagStr("World")
-        >>> type(a+c) is TagStr
-        True
-        >>> a + 1
-        Traceback (most recent call last):
-            ...
-        TypeError: TagStr concatenate only with str or TagStr
-        """
-        if not isinstance(elem, (str, self.__class__)):
-            raise TypeError("TagStr concatenate only with str or TagStr")
-
-        return self.__class__(str(self) + str(elem))
-
-    def __radd__(self, elem):
-        """Concatenation handling
-
-        >>> a = "World"
-        >>> b = TagStr("Hello ")
-        >>> type(a+b) is TagStr
-        True
-        >>> c = TagStr("World")
-        >>> type(c+b) is TagStr
-        True
-        >>> 1 + b
-        Traceback (most recent call last):
-            ...
-        TypeError: TagStr concatenate only with str or TagStr
-        """
-        if not isinstance(elem, (str, self.__class__)):
-            raise TypeError("TagStr concatenate only with str or TagStr")
-
-        return self.__class__(str(elem) + str(self))
-
-    def shell(self):
-        """
-        >>> test_str = TagStr('Here is a <u>test</u> string')
-        >>> test_str
-        'Here is a <u>test</u> string'
-        >>> test_str.shell()
-        'Here is a \\x1b[4mtest\\x1b[24m string'
-
-        Returns:
-            str: Convert the tags to a decorated shell output.
-        """
-        text = str(self)
-        for tag, code in self._shell.items():
-            if isinstance(code, dict):
-
-                closing = self._shell["end"]
-
-                # Determination of the closing tag
-                if "end" in code.keys():
-                    closing = self._shell[tag]["end"]
-
-                for tag2, code2 in code.items():
-                    regex = re.compile(
-                        r"(<{0}={1}>)(.*?)(</{0}>)".format(tag, tag2), re.DOTALL
-                    )
-                    text = regex.sub(r"{0}\2{1}".format(code2, closing), text)
-            else:
-                regex = re.compile(r"(<{0}>)(.*?)(</{0}>)".format(tag), re.DOTALL)
-                if isinstance(code, list):
-                    text = regex.sub(r"{0}\2{1}".format(*code), text)
-                else:
-                    text = regex.sub(r"{0}\2{1}".format(code, self._shell["end"]), text)
-        return text
-
-    def empty(self):
-        """
-        >>> test_str = TagStr('Here is a <u>test</u> string')
-        >>> test_str
-        'Here is a <u>test</u> string'
-        >>> test_str.empty()
-        'Here is a test string'
-
-        Returns:
-            str: Refined string without tags
-        """
-        regex = re.compile(r"(<.*?>)")
-        return regex.sub("", self)
 
 
 class Repo(git.Repo):
@@ -272,7 +143,7 @@ class Repo(git.Repo):
         if self.bare:
             form["path"] = self.path
             form["more"] = ""
-            form["status"] = "[<color=yellow>BARE</color>]"
+            form["status"] = r"[[bright_yellow]BARE[bright_yellow]]"
         else:
 
             if len(self.working_dir) <= max_path_len + 3:
@@ -281,27 +152,28 @@ class Repo(git.Repo):
                 form["path"] = "..." + self.working_dir[-max_path_len:]
 
             if not self.is_dirty():
-                form["status"] = "[ <color=green>OK</color> ]"
+                form["status"] = r"[ [bright_green]OK[/bright_green] ]"
             else:
-                form["status"] = "[ <color=red>KO</color> ]"
+                form["status"] = r"[ [bright_red]KO[/bright_red] ]"
 
             remote_diff = self.remote_diff()
             if remote_diff:
-                form["more"] = ["%s:%s" % tuple(x) for x in remote_diff.items()]
+                form["more"] = [f"{k}:[cyan]{v}[/cyan]" for k, v in remote_diff.items()]
 
             if self.stashed():
-                form["more"].append("<color=yellow>stash</color>")
+                form["more"].append("[bright_yellow]stash[/bright_yellow]")
 
             if len(form["more"]):
                 form["more"] = "(" + ",".join(form["more"]) + ")"
             else:
                 form["more"] = ""
 
-        line = TagStr(template.format(**form))
-        form["filler"] = " " * (line_width - len(line.empty()))
+        line = template.format(**form)
+        line_len = Text.from_markup(line).cell_len
+        form["filler"] = " " * (line_width - line_len)
 
-        line = TagStr(template.format(**form))
-        return line.shell()
+        line = template.format(**form)
+        return line
 
 
 class Meta(object):
@@ -422,12 +294,12 @@ class Meta(object):
             try:
                 repo = Repo(path)
             except git.exc.GitError:
-                errstr = TagStr(f"<color=red>{path}</color>")
+                errstr = f"[bright_red]{path}[/bright_red]"
                 if clean:
                     errstr += " discarded"
                 else:
                     errstr += " is not a valid repository."
-                print(errstr.shell())
+                console.print(errstr)
                 if clean:
                     self.repolist.remove(path)
                     self._write_repolist(self.repolist)
@@ -463,7 +335,7 @@ class Meta(object):
             line_width = 80
 
         for repo in self.iter(clean=clean, filter_status=filter_status):
-            print(repo.statusline(line_width))
+            console.print(repo.statusline(line_width), highlight=False)
 
     def terminal(self, filter_status=None):
         """Open a terminal on each repository selected by the filter

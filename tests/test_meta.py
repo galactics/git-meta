@@ -3,8 +3,10 @@
 
 import os
 import git
+from io import StringIO
 from pytest import fixture, mark
 
+from rich.console import Console
 from gitmeta import Repo, Meta
 
 author = git.Actor("test_author", "author@example.com")
@@ -170,6 +172,12 @@ def meta(tmpdir, pulling):
     meta.discover()
 
 
+def eat_the_rich(txt):
+    console = Console(file=StringIO())
+    console.print(txt)
+    return console.file.getvalue()[:-1]
+
+
 def test_empty_repo(empty_repo):
     assert not empty_repo.is_dirty()
     assert not len(list(empty_repo.index.iter_blobs()))
@@ -178,22 +186,22 @@ def test_empty_repo(empty_repo):
 
 def test_clean_repo(clean_repo):
     assert not clean_repo.is_dirty()
-    assert clean_repo.statusline().endswith("[ \x1b[92mOK\x1b[39m ]") is True
+    assert eat_the_rich(clean_repo.statusline()).endswith("[ OK ]")
 
 
 def test_dirty_repo(dirty_repo):
     assert dirty_repo.is_dirty()
-    assert dirty_repo.statusline().endswith("[ \x1b[91mKO\x1b[39m ]") is True
+    assert eat_the_rich(dirty_repo.statusline()).endswith("[ KO ]")
 
 
 def test_dirty_index(dirty_index):
     assert dirty_index.is_dirty()
-    assert dirty_index.statusline().endswith("[ \x1b[91mKO\x1b[39m ]") is True
+    assert eat_the_rich(dirty_index.statusline()).endswith("[ KO ]")
 
 
 def test_clean_repo2(clean_repo2):
     assert not clean_repo2.is_dirty()
-    assert clean_repo2.statusline().endswith("[ \x1b[92mOK\x1b[39m ]") is True
+    assert eat_the_rich(clean_repo2.statusline()).endswith("[ OK ]")
 
 
 def test_ignore(ignored_file):
@@ -204,15 +212,12 @@ def test_cloned(clone):
     original, clone = clone
     assert original.remote_diff() == {}
     assert clone.remote_diff() == {"main": "2-1"}
-    assert clone.statusline().endswith("(main:2-1) [ \x1b[92mOK\x1b[39m ]") is True
+    assert eat_the_rich(clone.statusline()).endswith("(main:2-1) [ OK ]")
 
 
 def test_stashed(stashed):
-    assert stashed.stashed() is True
-    assert (
-        stashed.statusline().endswith("(\x1b[93mstash\x1b[39m) [ \x1b[92mOK\x1b[39m ]")
-        is True
-    )
+    assert stashed.stashed()
+    assert eat_the_rich(stashed.statusline()).endswith("(stash) [ OK ]")
 
 
 def test_meta_discovery(meta, capsys):
