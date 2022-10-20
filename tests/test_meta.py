@@ -203,8 +203,8 @@ def test_ignore(ignored_file):
 def test_cloned(clone):
     original, clone = clone
     assert original.remote_diff() == {}
-    assert clone.remote_diff() == {"master": "2-1"}
-    assert clone.statusline().endswith("(master:2-1) [ \x1b[92mOK\x1b[39m ]") is True
+    assert clone.remote_diff() == {"main": "2-1"}
+    assert clone.statusline().endswith("(main:2-1) [ \x1b[92mOK\x1b[39m ]") is True
 
 
 def test_stashed(stashed):
