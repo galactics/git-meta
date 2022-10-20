@@ -417,22 +417,20 @@ class Meta(object):
             repofile.write("\n".join(repolist))
 
     def iter(self, clean=False, filter_status=None):
-        for path in self.repolist:
+        errstr = ""
+        for path in self.repolist.copy():
             try:
                 repo = Repo(path)
             except git.exc.GitError:
-                errstr = TagStr(
-                    "<color=red>The directory\n  %s\nis not a valid repository." % path
-                )
+                errstr = TagStr(f"<color=red>{path}</color>")
                 if clean:
-                    errstr += " Discarded</color>"
+                    errstr += " discarded"
                 else:
-                    errstr += " Use the option --clean to discard it.</color>"
+                    errstr += " is not a valid repository."
                 print(errstr.shell())
                 if clean:
-                    repolist = self.repolist[:]
-                    repolist.remove(path)
-                    self._write_repolist(repolist)
+                    self.repolist.remove(path)
+                    self._write_repolist(self.repolist)
             else:
                 if (
                     filter_status in (None, "all")
@@ -446,6 +444,8 @@ class Meta(object):
                     )
                 ):
                     yield repo
+        if not clean and errstr:
+            print("\nUse the --clean option to discard invalid repositories.")
 
     def scan(self, clean=False, filter_status=None):
         """Scan all the repositories in the database for their statuses
