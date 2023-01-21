@@ -72,9 +72,20 @@ class Repo(git.Repo):
         """
         diffs = {}
 
+        remote_refs = set([br for rem in self.remotes for br in rem.refs])
+        
         for branch in self.branches:
             if branch.tracking_branch() is not None:
                 remote = branch.tracking_branch()
+
+                # Check if the remote branch is available in any remote
+                # branches. When a remote branch is deleted but the local
+                # branch is kept, the remote branch still appears as tracking
+                # branch, even so it does not exist as a reference anymore
+                # See issue https://github.com/galactics/git-meta/issues/1
+                if remote not in remote_refs:
+                    continue
+
                 base = self.merge_base(branch, remote)[0]
 
                 # From base to local branch

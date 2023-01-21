@@ -253,3 +253,21 @@ def test_meta_scan(meta, dirty_repo, capsys):
     meta.scan(filter_status="rdiff")
     out, err = capsys.readouterr()
     assert out.endswith("(master:1) [ \x1b[92mOK\x1b[39m ]\n")
+
+
+def test_deleted_remote_branch(clone):
+
+    original, clone = clone
+
+    # Create a new local branch, push it, then delete it
+    # In a previous version, this generated an ugly exception
+    new = clone.create_head("new", "HEAD")
+    new.checkout()
+
+    clone.git.push("origin", "-u", "new")
+    clone.heads.main.checkout()
+    clone.git.push("origin", "-d", "new")
+
+    assert original.remote_diff() == {}
+    assert clone.remote_diff() == {"main": "2-1"}
+    assert eat_the_rich(clone.statusline()).endswith("(main:2-1) [ OK ]")
