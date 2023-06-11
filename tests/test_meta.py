@@ -211,8 +211,8 @@ def test_ignore(ignored_file):
 def test_cloned(clone):
     original, clone = clone
     assert original.remote_diff() == {}
-    assert clone.remote_diff() == {"main": "2-1"}
-    assert eat_the_rich(clone.statusline()).endswith("(main:2-1) [ OK ]")
+    assert clone.remote_diff() == {"main": "+2-1"}
+    assert eat_the_rich(clone.statusline()).endswith("(main+2-1) [ OK ]")
 
 
 def test_stashed(stashed):
@@ -269,5 +269,5 @@ def test_deleted_remote_branch(clone):
     clone.git.push("origin", "-d", "new")
 
     assert original.remote_diff() == {}
-    assert clone.remote_diff() == {"main": "2-1"}
-    assert eat_the_rich(clone.statusline()).endswith("(main:2-1) [ OK ]")
+    assert clone.remote_diff() == {"main": "+2-1"}
+    assert eat_the_rich(clone.statusline()).endswith("(main+2-1) [ OK ]")

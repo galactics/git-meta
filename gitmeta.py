@@ -108,11 +108,11 @@ class Repo(git.Repo):
                 # Express remote difference in the '__git_ps1' fashion
                 if count_asc or count_desc:
                     if count_asc and count_desc:
-                        count = "{0}-{1}".format(count_desc, count_asc)
+                        count = "+{0}-{1}".format(count_desc, count_asc)
                     elif count_desc:
-                        count = str(count_desc)
+                        count = "{0:+0}".format(count_desc)
                     else:
-                        count = str(-count_asc)
+                        count = "{0:+0}".format(-count_asc)
 
                     diffs[branch.name] = count
 
@@ -163,13 +163,13 @@ class Repo(git.Repo):
                 form["path"] = "..." + self.working_dir[-max_path_len:]
 
             if not self.is_dirty():
-                form["status"] = r"[ [bright_green]OK[/bright_green] ]"
+                form["status"] = r"[ [bold bright_green]OK[/bold bright_green] ]"
             else:
-                form["status"] = r"[ [bright_red]KO[/bright_red] ]"
+                form["status"] = r"[ [bold bright_red]KO[/bold bright_red] ]"
 
             remote_diff = self.remote_diff()
             if remote_diff:
-                form["more"] = [f"{k}:[cyan]{v}[/cyan]" for k, v in remote_diff.items()]
+                form["more"] = [f"{k}[bright_green]{v}[/bright_green]" for k, v in remote_diff.items()]
 
             if self.stashed():
                 form["more"].append("[bright_yellow]stash[/bright_yellow]")
