@@ -191,13 +191,10 @@ class Meta(object):
     """Class handling the repositories database"""
 
     def __init__(self):
-        self.repolist = []
-
         self._define_paths()
         # Load the database file
-        try:
-            self.read_list()
-        except (IOError, FileNotFoundError):
+
+        if not self.repolist:
             self.discover()
 
     def _define_paths(self):
@@ -221,13 +218,38 @@ class Meta(object):
                 for k, v in global_config.items("meta"):
                     self.config[k] = v
 
-    def read_list(self):
+    @property
+    def repolist(self):
         """Read the database file to extract the paths of previously scanned
         repositories
         """
 
-        with open(self.config["repolist"]) as repolist_f:
-            self.repolist = repolist_f.read().splitlines()
+        if not hasattr(self, "_repolist"):
+            try:
+                with open(self.config["repolist"]) as repolist_f:
+                    self._repolist = repolist_f.read().splitlines()
+            except (IOError, FileNotFoundError):
+                self._repolist = []
+
+        return self._repolist
+
+    @repolist.setter
+    def repolist(self, repolist):
+        """Writing all the repositories discovered to the database
+        file for future utilisation
+
+        Args:
+            repolist (list of str)
+        """
+
+        repolist = list(sorted(repolist))
+
+        os.makedirs(os.path.dirname(self.config["repolist"]), exist_ok=True)
+
+        with open(self.config["repolist"], "w+") as repofile:
+            repofile.write("\n".join(repolist))
+
+        self._repolist = repolist
 
     def discover(self):
         """Scan the subfolders to discover repositories
@@ -282,22 +304,7 @@ class Meta(object):
                     # which are perfectly managed by the base repository.
                     del dirs[:]
 
-        self._write_repolist(repolist)
-
-        # Force the content of the repolist to the newly made
-        self.repolist = sorted(set(repolist))
-
-    def _write_repolist(self, repolist):
-        """Writing all the repositories discovered to the database
-        file for future utilisation
-
-        Args:
-            repolist (list of str)
-        """
-        os.makedirs(os.path.dirname(self.config["repolist"]), exist_ok=True)
-
-        with open(self.config["repolist"], "w+") as repofile:
-            repofile.write("\n".join(repolist))
+        self.repolist = repolist
 
     def iter(self, clean=False, filter_status=None):
         errstr = ""
@@ -312,8 +319,9 @@ class Meta(object):
                     errstr += " is not a valid repository."
                 console.print(errstr)
                 if clean:
-                    self.repolist.remove(path)
-                    self._write_repolist(self.repolist)
+                    new_repolist = self.repolist.copy()
+                    new_repolist.remove(path)
+                    self.repolist = new_repolist
             else:
                 if (
                     filter_status in (None, "all")
