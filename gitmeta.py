@@ -200,13 +200,13 @@ class Meta(object):
             self.discover()
 
     def _define_paths(self):
-        cache = user_cache_dir("gitmeta", "gitmeta")
+        cache = Path(user_cache_dir("gitmeta", "gitmeta"))
 
         # Default locations
         self.config = {
-            "repolist": os.path.join(cache, "repolist.txt"),
-            "ignorelist": os.path.join(cache, "ignore.txt"),
-            "scanroot": os.environ["HOME"],
+            "repolist": cache.joinpath("repolist.txt"),
+            "ignorelist": cache.joinpath("ignore.txt"),
+            "scanroot": Path(os.environ["HOME"]),
         }
 
         # Parsing of the global config file
@@ -227,8 +227,8 @@ class Meta(object):
 
         if not hasattr(self, "_repolist"):
             try:
-                with open(self.config["repolist"]) as repolist_f:
-                    self._repolist = repolist_f.read().splitlines()
+                with self.config["repolist"].open() as fp:
+                    self._repolist = fp.read().splitlines()
             except (IOError, FileNotFoundError):
                 self._repolist = []
 
@@ -245,9 +245,9 @@ class Meta(object):
 
         repolist = list(sorted(repolist))
 
-        os.makedirs(os.path.dirname(self.config["repolist"]), exist_ok=True)
+        self.config["repolist"].parent.mkdir(exist_ok=True)
 
-        with open(self.config["repolist"], "w+") as repofile:
+        with self.config["repolist"].open("w+") as repofile:
             repofile.write("\n".join(repolist))
 
         self._repolist = repolist
@@ -261,8 +261,8 @@ class Meta(object):
         """
 
         try:
-            with open(self.config["ignorelist"]) as ignore_file:
-                ignorelist = ignore_file.read().splitlines()
+            with self.config["ignorelist"].open() as fp:
+                ignorelist = fp.read().splitlines()
         except (IOError, FileNotFoundError):
             ignorelist = []
 
