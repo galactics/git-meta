@@ -73,7 +73,7 @@ class Repo(git.Repo):
         diffs = {}
 
         remote_refs = set([br for rem in self.remotes for br in rem.refs])
-        
+
         for branch in self.branches:
             if branch.tracking_branch() is not None:
                 remote = branch.tracking_branch()
@@ -156,7 +156,6 @@ class Repo(git.Repo):
             form["more"] = ""
             form["status"] = r"[[bright_yellow]BARE[bright_yellow]]"
         else:
-
             if len(self.working_dir) <= max_path_len + 3:
                 form["path"] = self.working_dir
             else:
@@ -169,7 +168,10 @@ class Repo(git.Repo):
 
             remote_diff = self.remote_diff()
             if remote_diff:
-                form["more"] = [f"{k}[bright_green]{v}[/bright_green]" for k, v in remote_diff.items()]
+                form["more"] = [
+                    f"{k}[bright_green]{v}[/bright_green]"
+                    for k, v in remote_diff.items()
+                ]
 
             if self.stashed():
                 form["more"].append("[bright_yellow]stash[/bright_yellow]")
@@ -198,7 +200,6 @@ class Meta(object):
             self.discover()
 
     def _define_paths(self):
-
         cache = user_cache_dir("gitmeta", "gitmeta")
 
         # Default locations
