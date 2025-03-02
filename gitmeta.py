@@ -8,8 +8,6 @@ Usage:
 
 Options:
   -d, --discover  Look for new git repositories
-  -c, --clean     If a non-valid repository is encountered, it is removed from
-                  the list
   -a, --all       Display all repositories
   -o, --ok        Display only repositories where everithing is fine
   -n, --nok       Display only repositories where there is something happening
@@ -307,22 +305,16 @@ class Meta(object):
 
         self.repolist = repolist
 
-    def iter(self, clean=False, filter_status=None):
+    def iter(self, filter_status=None):
         errstr = ""
         for path in self.repolist.copy():
             try:
                 repo = Repo(path)
             except git.exc.GitError:
-                errstr = f"[bright_red]{path}[/bright_red]"
-                if clean:
-                    errstr += " discarded"
-                else:
-                    errstr += " is not a valid repository."
-                console.print(errstr)
-                if clean:
-                    new_repolist = self.repolist.copy()
-                    new_repolist.remove(path)
-                    self.repolist = new_repolist
+                console.print(f"[bright_red]{path}[/bright_red] discarded")
+                new_repolist = self.repolist.copy()
+                new_repolist.remove(path)
+                self.repolist = new_repolist
             else:
                 if (
                     filter_status in (None, "all")
@@ -336,14 +328,11 @@ class Meta(object):
                     )
                 ):
                     yield repo
-        if not clean and errstr:
-            print("\nUse the --clean option to discard invalid repositories.")
 
-    def scan(self, clean=False, filter_status=None):
+    def scan(self, filter_status=None):
         """Scan all the repositories in the database for their statuses
 
         Args:
-            clean (bool): If True, remove any unvalid repository from the watched list
             filter_status (str): Only return repositiries having the given status.
                 Usable status are "OK", "KO", "remote", "NOK" and "all"
         """
@@ -354,7 +343,7 @@ class Meta(object):
         except Exception:
             line_width = 80
 
-        for repo in self.iter(clean=clean, filter_status=filter_status):
+        for repo in self.iter(filter_status=filter_status):
             console.print(repo.statusline(line_width), highlight=False)
 
     def terminal(self, filter_status=None):
@@ -409,7 +398,7 @@ def main():  # pragma: no cover
     if args["--discover"]:
         meta.discover()
 
-    meta.scan(filter_status=filter_status, clean=args["--clean"])
+    meta.scan(filter_status=filter_status)
 
     if args["--terminal"]:
         meta.terminal(filter_status=filter_status)
