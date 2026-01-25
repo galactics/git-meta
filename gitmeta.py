@@ -4,10 +4,9 @@
 """Check multiple git repositories' status
 
 Usage:
-  git-meta [-dc] [-a|-o|-n|-k|-r|-?|--no-remote] [-t]
+  git-meta [-a|-o|-n|-k|-r|-?|--no-remote] [-t]
 
 Options:
-  -d, --discover  Look for new git repositories
   -a, --all       Display all repositories
   -o, --ok        Display only repositories where everithing is fine
   -n, --nok       Display only repositories where there is something happening
@@ -194,15 +193,13 @@ class Meta(object):
         self._define_paths()
         # Load the database file
 
-        if not self.repolist:
-            self.discover()
+        self.discover()
 
     def _define_paths(self):
         cache = Path(user_cache_dir("gitmeta", "gitmeta"))
 
         # Default locations
         self.config = {
-            "repolist": cache.joinpath("repolist.txt"),
             "ignorelist": cache.joinpath("ignore.txt"),
             "scanroot": Path(os.environ["HOME"]),
         }
@@ -216,39 +213,6 @@ class Meta(object):
             if global_config.has_section("meta"):
                 for k, v in global_config.items("meta"):
                     self.config[k] = v
-
-    @property
-    def repolist(self):
-        """Read the database file to extract the paths of previously scanned
-        repositories
-        """
-
-        if not hasattr(self, "_repolist"):
-            try:
-                with self.config["repolist"].open() as fp:
-                    self._repolist = fp.read().splitlines()
-            except (IOError, FileNotFoundError):
-                self._repolist = []
-
-        return self._repolist
-
-    @repolist.setter
-    def repolist(self, repolist):
-        """Writing all the repositories discovered to the database
-        file for future utilisation
-
-        Args:
-            repolist (list of str)
-        """
-
-        repolist = list(sorted(repolist))
-
-        self.config["repolist"].parent.mkdir(exist_ok=True)
-
-        with self.config["repolist"].open("w+") as repofile:
-            repofile.write("\n".join(repolist))
-
-        self._repolist = repolist
 
     def discover(self):
         """Scan the subfolders to discover repositories
@@ -265,12 +229,6 @@ class Meta(object):
             ignorelist = []
 
         repolist = []
-
-        print(
-            "Discovery of repositories in {0} sub-directories".format(
-                self.config["scanroot"]
-            )
-        )
 
         for root, dirs, files in os.walk(self.config["scanroot"]):
             if root in ignorelist:
@@ -395,9 +353,6 @@ def main():  # pragma: no cover
         filter_status = "no-remote"
 
     meta = Meta()
-    if args["--discover"]:
-        meta.discover()
-
     meta.scan(filter_status=filter_status)
 
     if args["--terminal"]:
