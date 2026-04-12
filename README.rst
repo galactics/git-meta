@@ -1,10 +1,6 @@
 git-meta
 ========
 
-.. image:: https://travis-ci.org/galactics/git-meta.svg?branch=master
-    :alt: Travis tests
-    :target: https://travis-ci.org/galactics/git-meta
-
 .. image:: http://readthedocs.org/projects/git-meta/badge/?version=latest
     :alt: Documentation Status
     :target: http://git-meta.readthedocs.io/en/latest/?badge=latest

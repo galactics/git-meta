@@ -8,8 +8,8 @@ git-meta's documentation
 
 :Authors: Jules David <jules@onada.fr>
           Tristan Gregoire <tristan@onada.fr>
-:Source code: `github.com project <https://github.com/galactis/gitmeta>`_
-:Bug tracker: `github.com issues <https://github.com/galactics/gitmeta/issues>`_
+:Source code: `Codeberg <https://codeberg.org/galactics/git-meta>`_
+:Bug tracker: `Issues <https://codeberg.org/galactics/git-meta/issues>`_
 :License: BSD
 :Generated: |today|
 :Version: |release|
