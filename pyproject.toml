@@ -41,6 +41,9 @@ Documentation = "https://git-meta.readthedocs.io"
 Repository = "https://codeberg.org/galactics/git-meta"
 Issues = "https://codeberg.org/galactics/git-meta/issues"
 
+[project.scripts]
+git-meta = "gitmeta:main"
+
 [project.optional-dependencies]
 dev = [
     "sphinx",
